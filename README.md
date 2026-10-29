@@ -4,6 +4,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 当前版本 **v1.2.0 (build 3)**，Android 安装包见 [`installer/`](installer/)。
 
+![Lua Node Studio 界面演示](docs/screenshot.jpg)
+
 ## 功能
 
 - **可视化节点画布**：节点拖拽、端口连线、网格背景、缩放/平移，适配手机与桌面窗口尺寸
