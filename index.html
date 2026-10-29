@@ -76,9 +76,9 @@
       </div>
       <p class="hint reveal" data-i18n="heroHint">开源免费 · 无需注册 · 工程数据只保存在本机</p>
       <div class="stats reveal">
-        <div class="stat"><b>17</b><span data-i18n="statNodes">种节点，覆盖流程 / 数据 / 运算 / 控制 / 函数</span></div>
-        <div class="stat"><b>5</b><span data-i18n="statSamples">个内置算法示例，打开即运行</span></div>
-        <div class="stat"><b>44</b><span data-i18n="statTests">个自动化测试持续保证质量</span></div>
+        <div class="stat"><b>30</b><span data-i18n="statNodes">种节点，覆盖流程 / 数据 / 运算 / 控制 / 函数 / 模块</span></div>
+        <div class="stat"><b>8</b><span data-i18n="statSamples">个内置算法示例，打开即运行</span></div>
+        <div class="stat"><b>49</b><span data-i18n="statTests">个自动化测试持续保证质量</span></div>
         <div class="stat"><b>2</b><span data-i18n="statPlatforms">平台：Android 与 Windows</span></div>
       </div>
     </div>
@@ -118,6 +118,20 @@
         </div>
         <h3 data-i18n="f2t">实时生成 Lua 代码</h3>
         <p data-i18n="f2p">执行流决定语句顺序，数据流递归展开为表达式；分支与循环自动找到汇合点，不需要额外的 merge 节点。</p>
+      </article>
+      <article class="card reveal">
+        <div class="ico amber">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M5 4h14v2H5V4Zm2 5h10v2H7V9Zm2 5h6v2H9v-2Zm2 5h2v2h-2v-2Z"/></svg>
+        </div>
+        <h3 data-i18n="f7t">专用运算与表达式节点</h3>
+        <p data-i18n="f7p">加、减、乘、除、取余、幂运算各有独立节点；表达式节点里直接写 (a + b) * (a - b)，a / b / c 自动替换成输入端口的值。</p>
+      </article>
+      <article class="card reveal">
+        <div class="ico green">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z"/></svg>
+        </div>
+        <h3 data-i18n="f8t">算法模块节点</h3>
+        <p data-i18n="f8p">求和、阶乘、斐波那契、最大公约数、素数判断各一个模块节点；生成代码时只输出真正用到的模块函数，源码依然干净。</p>
       </article>
       <article class="card reveal">
         <div class="ico purple">
@@ -225,7 +239,7 @@
   <section class="section samples">
     <div class="section-head reveal">
       <span class="eyebrow" data-i18n="samEyebrow">内置示例</span>
-      <h2 data-i18n="samTitle">5 个算法示例，打开就能运行</h2>
+      <h2 data-i18n="samTitle">8 个算法示例，打开就能运行</h2>
       <p data-i18n="samLead">每一个都配好了节点与预期输出，适合学习或作为新工程的起点。</p>
     </div>
     <div class="sample-grid">
@@ -234,6 +248,9 @@
       <div class="sample reveal"><b>斐波那契数列</b><span data-i18n="sam3">带参数的函数 + 循环维护两个变量：求 fib(10)</span><code>fib(10) = 55</code></div>
       <div class="sample reveal"><b>最大公约数 gcd</b><span data-i18n="sam4">两个参数 + while 循环 + 取模：gcd(48, 36)</span><code>gcd(48, 36) = 12</code></div>
       <div class="sample reveal"><b>素数判断</b><span data-i18n="sam5">if/else 提前返回 + while 试除：判断 97 是否为素数</span><code>true</code></div>
+      <div class="sample reveal"><b>模块化求和</b><span data-i18n="sam6">用「求和模块」一个节点算 1 到 100 的和</span><code>sum(1..100) = 5050</code></div>
+      <div class="sample reveal"><b>表达式计算</b><span data-i18n="sam7">一个「表达式」节点写完 (a + b) * (a - b)</span><code>expr = 20</code></div>
+      <div class="sample reveal"><b>加减乘除</b><span data-i18n="sam8">12 和 4 分别做加减乘除四种运算</span><code>12 / 4 = 3.0</code></div>
     </div>
   </section>
 
