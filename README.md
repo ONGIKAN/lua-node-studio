@@ -6,6 +6,17 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
 
+## English
+
+**Lua Node Studio** is a visual node-based editor for Lua. Drag nodes onto the canvas and connect ports; the editor generates readable Lua 5.3 source code in real time and runs it with an embedded Lua 5.3 runtime (pure Dart, executed in an isolate with an 8-second timeout).
+
+- Node categories: flow, data, math, control, function, including **user-defined functions with parameters and return values**
+- Live Lua code generation, one-click run, output panel with stdout / errors / timing
+- JSON project save / autosave, undo / redo, automatic layout
+- 5 built-in sample graphs: 1-to-10 sum, factorial, Fibonacci, greatest common divisor, primality test
+- Cross-platform: **Android** (APK) and **Windows** (portable x64) — downloads on the [Releases](https://github.com/ONGIKAN/lua-node-studio/releases) page
+- Flutter / Dart, Material 3, 21 unit + golden tests
+
 ## 功能
 
 - **可视化节点画布**：节点拖拽、端口连线、网格背景、缩放/平移，适配手机与桌面窗口尺寸
