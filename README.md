@@ -1,6 +1,6 @@
 # Lua Node Studio（Lua 节点工作室）
 
-Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。
+Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。同一份代码支持 **Android** 与 **Windows** 双平台。
 
 当前版本 **v1.3.0 (build 4)**，Android 安装包见 [`installer/`](installer/)。
 
@@ -19,7 +19,11 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 - **撤销 / 重做**、节点自动布局
 - 深色 Material 3 主题
 
-## 安装包（Android）
+## 下载与安装
+
+两个平台的产物都发布在 [Releases](https://github.com/ONGIKAN/lua-node-studio/releases)；仓库内也附带了最新 Android 安装包。
+
+### Android
 
 | 项目 | 说明 |
 | --- | --- |
@@ -28,7 +32,18 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 | 包名 | `com.luanode.lua_node_studio` |
 | 大小 | 约 51.5 MB |
 
-下载后允许“安装未知应用”即可安装；也可以直接从 [Releases](https://github.com/ONGIKAN/lua-node-studio/releases) 下载 APK。
+下载后允许“安装未知应用”即可安装。
+
+### Windows（桌面版）
+
+| 项目 | 说明 |
+| --- | --- |
+| 文件 | Release 资产 `lua_node_studio-v1.3.0-windows-x64.zip` |
+| 版本 | 1.3.0 |
+| 系统要求 | Windows 10 / 11 x64 |
+| 大小 | 约 12 MB |
+
+解压后双击 `lua_node_studio.exe` 即可运行；`data/` 目录与 dll 需要和 exe 保持在同一个文件夹里。
 
 ## 本地开发
 
@@ -36,12 +51,13 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 ```bash
 flutter pub get
-flutter run                  # 运行到已连接的设备 / 模拟器
-flutter test                 # 单元 + Golden 测试
-flutter build apk --release  # 构建 Android 安装包
+flutter run                      # 运行到已连接的设备 / 模拟器
+flutter test                     # 单元 + Golden 测试
+flutter build apk --release      # 构建 Android 安装包
+flutter build windows --release  # 构建 Windows 桌面版
 ```
 
-`windows/` 目录保留了 Flutter 桌面工程，可按需执行 `flutter build windows`（需在支持桌面构建的环境操作）。
+Android 产物在 `build/app/outputs/flutter-apk/`，Windows 产物在 `build/windows/x64/runner/Release/`（需安装 Visual Studio 的“使用 C++ 的桌面开发”工作负载）。
 
 ## 目录结构
 
@@ -73,6 +89,7 @@ Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_da
 - `调用函数` 节点支持最多 3 个参数，并可把返回值接到其它节点；`结束` 节点支持 `return 表达式`
 - 新增 4 个常见算法示例：阶乘、斐波那契数列、最大公约数、素数判断
 - 菜单「载入示例图」改为示例选择对话框；补充示例执行与代码生成的自动化测试
+- 新增 **Windows 桌面版**：同一份 Dart 代码编译为 Android APK 与 Windows 可执行程序
 
 ### v1.2.0
 
