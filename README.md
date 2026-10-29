@@ -2,7 +2,7 @@
 
 Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。同一份代码支持 **Android** 与 **Windows** 双平台。
 
-当前版本 **v1.6.0 (build 7)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换，并支持接入自定义 AI API（OpenAI 兼容）用对话直接生成节点图。
+当前版本 **v1.6.1 (build 8)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换，并支持接入自定义 AI API（OpenAI 兼容）用对话直接生成节点图。
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
 
@@ -49,8 +49,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | `installer/lua_node_studio-v1.6.0-release.apk` |
-| 版本 | 1.6.0 (versionCode 7) |
+| 文件 | `installer/lua_node_studio-v1.6.1-release.apk` |
+| 版本 | 1.6.1 (versionCode 8) |
 | 包名 | `com.luanode.lua_node_studio` |
 | 大小 | 约 53.6 MB |
 
@@ -60,8 +60,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | Release 资产 `lua_node_studio-v1.6.0-windows-x64.zip` |
-| 版本 | 1.6.0 |
+| 文件 | Release 资产 `lua_node_studio-v1.6.1-windows-x64.zip` |
+| 版本 | 1.6.1 |
 | 系统要求 | Windows 10 / 11 x64 |
 | 大小 | 约 12.9 MB |
 
@@ -112,6 +112,12 @@ Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_da
 本项目使用 **Apache License 2.0**，全文见 [LICENSE](LICENSE)，第三方依赖声明见 [NOTICE](NOTICE)。欢迎 Star、提 Issue 和 PR。
 
 ## 更新日志
+
+### v1.6.1
+
+- 修复 Android Release 安装包缺少 `INTERNET` 权限的问题：此前在手机上测试 AI API 会报 “网络连接失败：Failed host lookup”，现在已可正常访问网络
+- 允许明文 HTTP 接口（`usesCleartextTraffic`），本地 Ollama / 自建 http 网关也可直接填写
+- 其余功能与 v1.6.0 相同（Windows 桌面版不受影响）
 
 ### v1.6.0
 
