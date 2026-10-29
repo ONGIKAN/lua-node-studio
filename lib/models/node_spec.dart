@@ -101,7 +101,7 @@ class NodeField {
         hint = '';
 }
 
-enum NodeCategory { flow, data, math, control, function }
+enum NodeCategory { flow, data, math, control, function, module }
 
 class NodeSpec {
   final String type;
@@ -149,6 +149,8 @@ Color categoryColor(NodeCategory c) {
       return const Color(0xFF5B3A66);
     case NodeCategory.function:
       return const Color(0xFF4A4757);
+    case NodeCategory.module:
+      return const Color(0xFF3C5F63);
   }
 }
 
@@ -164,6 +166,8 @@ String categoryLabel(NodeCategory c) {
       return L10n.t('控制', 'Control');
     case NodeCategory.function:
       return L10n.t('函数', 'Function');
+    case NodeCategory.module:
+      return L10n.t('模块', 'Modules');
   }
 }
 
@@ -421,6 +425,151 @@ class NodeRegistry {
         fields: [
           NodeField.text('text', t('内容', 'text'),
               defaultValue: t('说明', 'note'), hint: t('注释', 'comment')),
+        ],
+      ),
+      'add': NodeSpec(
+        type: 'add',
+        title: t('加法', 'Add'),
+        subtitle: 'a + b',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
+        ],
+        outputs: [PortSpec('result', t('和', 'sum'), PortType.any)],
+      ),
+      'sub': NodeSpec(
+        type: 'sub',
+        title: t('减法', 'Subtract'),
+        subtitle: 'a - b',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
+        ],
+        outputs: [PortSpec('result', t('差', 'difference'), PortType.any)],
+      ),
+      'mul': NodeSpec(
+        type: 'mul',
+        title: t('乘法', 'Multiply'),
+        subtitle: 'a × b',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '1'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '1'),
+        ],
+        outputs: [PortSpec('result', t('积', 'product'), PortType.any)],
+      ),
+      'div': NodeSpec(
+        type: 'div',
+        title: t('除法', 'Divide'),
+        subtitle: 'a ÷ b',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '1'),
+        ],
+        outputs: [PortSpec('result', t('商', 'quotient'), PortType.any)],
+      ),
+      'mod': NodeSpec(
+        type: 'mod',
+        title: t('取余', 'Modulo'),
+        subtitle: 'a % b',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '1'),
+        ],
+        outputs: [PortSpec('result', t('余数', 'remainder'), PortType.any)],
+      ),
+      'pow': NodeSpec(
+        type: 'pow',
+        title: t('幂运算', 'Power'),
+        subtitle: 'a ^ b',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '2'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '10'),
+        ],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+      ),
+      'mathfn': NodeSpec(
+        type: 'mathfn',
+        title: t('数学函数', 'Math function'),
+        subtitle: 'math.*',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
+        ],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+        fields: [
+          NodeField.select('fn', t('函数', 'function'),
+              ['abs', 'floor', 'ceil', 'sqrt', 'max', 'min', 'random'],
+              defaultValue: 'abs')
+        ],
+      ),
+      'expr': NodeSpec(
+        type: 'expr',
+        title: t('表达式', 'Expression'),
+        subtitle: 'a, b, c',
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
+          PortSpec('c', 'C', PortType.any, defaultLiteral: '0'),
+        ],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+        fields: [
+          NodeField.text('expression', t('表达式', 'expression'),
+              defaultValue: '(a + b)',
+              hint: t('a、b、c 会替换成输入端口的值',
+                  'a, b, c are replaced by input port values')),
+        ],
+      ),
+      'm_sum': NodeSpec(
+        type: 'm_sum',
+        title: t('求和模块', 'Sum module'),
+        subtitle: '1..n 求和',
+        category: NodeCategory.module,
+        inputs: [PortSpec('n', 'N', PortType.any, defaultLiteral: '100')],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+      ),
+      'm_fact': NodeSpec(
+        type: 'm_fact',
+        title: t('阶乘模块', 'Factorial module'),
+        subtitle: 'n!',
+        category: NodeCategory.module,
+        inputs: [PortSpec('n', 'N', PortType.any, defaultLiteral: '5')],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+      ),
+      'm_fib': NodeSpec(
+        type: 'm_fib',
+        title: t('斐波那契模块', 'Fibonacci module'),
+        subtitle: 'fib(n)',
+        category: NodeCategory.module,
+        inputs: [PortSpec('n', 'N', PortType.any, defaultLiteral: '10')],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+      ),
+      'm_gcd': NodeSpec(
+        type: 'm_gcd',
+        title: t('最大公约数模块', 'GCD module'),
+        subtitle: 'gcd(a, b)',
+        category: NodeCategory.module,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '48'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '36'),
+        ],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+      ),
+      'm_prime': NodeSpec(
+        type: 'm_prime',
+        title: t('素数判断模块', 'Prime module'),
+        subtitle: 'is prime(n)',
+        category: NodeCategory.module,
+        inputs: [PortSpec('n', 'N', PortType.any, defaultLiteral: '97')],
+        outputs: [
+          PortSpec('result', t('结果', 'result'), PortType.boolean)
         ],
       ),
     };

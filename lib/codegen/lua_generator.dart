@@ -16,6 +16,10 @@ class LuaGenResult {
 class LuaGenerator {
   final NodeGraph graph;
   final StringBuffer _out = StringBuffer();
+  /// 语句主体先写到独立缓冲，等收集完组合模块后再拼到表头之后。
+  final StringBuffer _body = StringBuffer();
+  /// 用到的组合模块内建函数（sum/fact/fib/gcd/prime）。
+  final Set<String> _usedModules = {};
   final Set<String> _declared = {};
   final List<String> _warnings = [];
   int _indent = 0;
@@ -42,16 +46,42 @@ class LuaGenerator {
     _out.writeln(L10n.t('-- 图名：${graph.name}', '-- Graph: ${graph.name}'));
     _out.writeln();
     _emitChain(start.id, <String>{});
+    _out.write(_modulePrelude());
+    _out.write(_body.toString());
     final code = _out.toString().trimRight();
     return LuaGenResult(code, List.unmodifiable(_warnings));
   }
 
   void _line(String s) {
     if (s.isEmpty) {
-      _out.writeln();
+      _body.writeln();
       return;
     }
-    _out.writeln('${'  ' * _indent}$s');
+    _body.writeln('${'  ' * _indent}$s');
+  }
+
+  // ---------------------------------------------------------- 组合模块
+  static const Map<String, String> _moduleFunctions = {
+    'sum':
+        'local function __mod_sum(n) local s = 0 for i = 1, n do s = s + i end return s end',
+    'fact':
+        'local function __mod_fact(n) local r = 1 for i = 2, n do r = r * i end return r end',
+    'fib':
+        'local function __mod_fib(n) local a, b = 0, 1 for _i = 1, n do a, b = b, (a + b) end return a end',
+    'gcd':
+        'local function __mod_gcd(a, b) while b ~= 0 do local t = b b = (a % b) a = t end return a end',
+    'prime':
+        'local function __mod_prime(n) if n < 2 then return false end if (n % 2) == 0 then return n == 2 end local i = 3 while (i * i) <= n do if (n % i) == 0 then return false end i = i + 2 end return true end',
+  };
+
+  String _modulePrelude() {
+    if (_usedModules.isEmpty) return '';
+    final buf = StringBuffer();
+    for (final entry in _moduleFunctions.entries) {
+      if (_usedModules.contains(entry.key)) buf.writeln(entry.value);
+    }
+    buf.writeln();
+    return buf.toString();
   }
 
   void _emitChain(String? nodeId, Set<String> guard, {String? stopAt}) {
@@ -313,6 +343,64 @@ class LuaGenerator {
         final op = src.field('op');
         if (op == 'not') return '(not ${_expr(src, 'a', depth)})';
         return '(${_expr(src, 'a', depth)} $op ${_expr(src, 'b', depth)})';
+      case 'add':
+      case 'sub':
+      case 'mul':
+      case 'div':
+      case 'mod':
+      case 'pow':
+        final op = const <String, String>{
+          'add': '+',
+          'sub': '-',
+          'mul': '*',
+          'div': '/',
+          'mod': '%',
+          'pow': '^',
+        }[src.type]!;
+        return '(${_expr(src, 'a', depth)} $op ${_expr(src, 'b', depth)})';
+      case 'mathfn':
+        final fn = src.field('fn');
+        const allowed = {
+          'abs',
+          'floor',
+          'ceil',
+          'sqrt',
+          'max',
+          'min',
+          'random',
+        };
+        if (!allowed.contains(fn)) {
+          _warnings.add(L10n.t('数学函数「$fn」不受支持，已改用 abs',
+              'Unsupported math function "$fn"; using abs'));
+          return 'math.abs(${_expr(src, 'a', depth)})';
+        }
+        if (fn == 'max' || fn == 'min' || fn == 'random') {
+          return 'math.$fn(${_expr(src, 'a', depth)}, ${_expr(src, 'b', depth)})';
+        }
+        return 'math.$fn(${_expr(src, 'a', depth)})';
+      case 'expr':
+        final raw = src.field('expression').trim();
+        if (raw.isEmpty) {
+          _warnings.add(L10n.t('「表达式」节点内容为空，已按 0 处理',
+              'The "Expression" node is empty; using 0'));
+          return '0';
+        }
+        return _substituteExpression(raw, src, depth);
+      case 'm_sum':
+        _usedModules.add('sum');
+        return '__mod_sum(${_expr(src, 'n', depth)})';
+      case 'm_fact':
+        _usedModules.add('fact');
+        return '__mod_fact(${_expr(src, 'n', depth)})';
+      case 'm_fib':
+        _usedModules.add('fib');
+        return '__mod_fib(${_expr(src, 'n', depth)})';
+      case 'm_gcd':
+        _usedModules.add('gcd');
+        return '__mod_gcd(${_expr(src, 'a', depth)}, ${_expr(src, 'b', depth)})';
+      case 'm_prime':
+        _usedModules.add('prime');
+        return '__mod_prime(${_expr(src, 'n', depth)})';
       case 'func':
         // 函数参数端口：p0/p1/... 直接就是函数体里的局部变量名
         final idx = _paramIndex(portId);
@@ -336,6 +424,46 @@ class LuaGenerator {
             '"${src.spec.title}" has no usable data output'));
         return 'nil';
     }
+  }
+
+  /// 把表达式里的 a/b/c 占位符替换成对应输入端口的 Lua 表达式，字符串字面量内不替换。
+  String _substituteExpression(String raw, GraphNode node, int depth) {
+    final values = {
+      'a': _expr(node, 'a', depth),
+      'b': _expr(node, 'b', depth),
+      'c': _expr(node, 'c', depth),
+    };
+    final out = StringBuffer();
+    String? quote;
+    var i = 0;
+    while (i < raw.length) {
+      final ch = raw[i];
+      if (quote != null) {
+        out.write(ch);
+        if (ch == quote) quote = null;
+        i++;
+        continue;
+      }
+      if (ch == '"' || ch == "'") {
+        quote = ch;
+        out.write(ch);
+        i++;
+        continue;
+      }
+      if (RegExp(r'[A-Za-z_]').hasMatch(ch)) {
+        var j = i;
+        while (j < raw.length && RegExp(r'[A-Za-z0-9_]').hasMatch(raw[j])) {
+          j++;
+        }
+        final name = raw.substring(i, j);
+        out.write(values[name] ?? name);
+        i = j;
+        continue;
+      }
+      out.write(ch);
+      i++;
+    }
+    return '(${out.toString()})';
   }
 
   String _number(String raw) {

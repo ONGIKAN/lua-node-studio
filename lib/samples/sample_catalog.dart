@@ -2,6 +2,7 @@ import '../l10n/l10n.dart';
 import '../models/graph.dart';
 import 'sample_algorithms.dart';
 import 'sample_graph.dart';
+import 'sample_modules.dart';
 
 /// 一条内置示例：标题、说明、预期输出，以及构建示例图的函数。
 class SampleEntry {
@@ -71,5 +72,30 @@ final List<SampleEntry> kSamples = [
         'Early return with if/else plus trial division: is 97 prime?',
     expectOutput: 'true',
     build: buildPrimeSample,
+  ),
+  SampleEntry(
+    title: '模块化求和',
+    titleEn: 'Module sum',
+    description: '用「求和模块」一个节点算 1 到 100 的和，不再手搭循环',
+    descriptionEn:
+        'One "Sum module" node totals 1..100 — no manual loop needed',
+    expectOutput: 'sum(1..100) = 5050',
+    build: buildModuleSumSample,
+  ),
+  SampleEntry(
+    title: '表达式计算',
+    titleEn: 'Expression',
+    description: '一个「表达式」节点里写完 (a + b) * (a - b)',
+    descriptionEn: 'Write (a + b) * (a - b) inside a single expression node',
+    expectOutput: 'expr = 20',
+    build: buildExpressionSample,
+  ),
+  SampleEntry(
+    title: '加减乘除',
+    titleEn: 'Arithmetic',
+    description: '12 和 4 分别做加减乘除，四种专用运算节点',
+    descriptionEn: 'Add, subtract, multiply and divide 12 by 4 with dedicated nodes',
+    expectOutput: '12 + 4 = 16\n12 - 4 = 8\n12 * 4 = 48\n12 / 4 = 3.0',
+    build: buildArithmeticSample,
   ),
 ];

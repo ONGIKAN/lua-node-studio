@@ -141,4 +141,45 @@ void main() {
       }
     }
   });
+
+  test('数学函数节点生成 math.* 调用并可执行', () async {
+    final b = SampleBuilder('数学函数测试');
+    b.node('start', 'start', 0, 0);
+    b.node('num9', 'number', 0, 200, fields: {'value': '9'});
+    b.node('sqrt', 'mathfn', 0, 400, fields: {'fn': 'sqrt'});
+    b.node('concat', 'math', 0, 600,
+        fields: {'op': '..'}, literals: {'a': '"sqrt(9) = "'});
+    b.node('p', 'print', 0, 800);
+    b.exec('start', 'out', 'p', 'in');
+    b.data('num9', 'value', 'sqrt', 'a');
+    b.data('sqrt', 'result', 'concat', 'b');
+    b.data('concat', 'result', 'p', 'value');
+
+    final result = LuaGenerator(b.graph).generate();
+    expect(result.warnings, isEmpty);
+    expect(result.code, contains('math.sqrt('));
+    final run = await const DartLuaEngine().run(result.code);
+    expect(run.success, isTrue, reason: run.error ?? '');
+    expect(run.output.trim(), 'sqrt(9) = 3.0');
+  });
+
+  test('表达式节点替换 a/b/c 占位符', () async {
+    final b = SampleBuilder('表达式测试');
+    b.node('start', 'start', 0, 0);
+    b.node('num2', 'number', 0, 200, fields: {'value': '2'});
+    b.node('num3', 'number', 0, 350, fields: {'value': '3'});
+    b.node('expr', 'expr', 0, 500,
+        fields: {'expression': 'a * b + 10'});
+    b.node('p', 'print', 0, 800);
+    b.exec('start', 'out', 'p', 'in');
+    b.data('num2', 'value', 'expr', 'a');
+    b.data('num3', 'value', 'expr', 'b');
+    b.data('expr', 'result', 'p', 'value');
+
+    final result = LuaGenerator(b.graph).generate();
+    expect(result.warnings, isEmpty);
+    final run = await const DartLuaEngine().run(result.code);
+    expect(run.success, isTrue, reason: run.error ?? '');
+    expect(run.output.trim(), '16');
+  });
 }

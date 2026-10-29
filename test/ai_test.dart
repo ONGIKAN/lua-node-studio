@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lua_node_studio/ai/ai_client.dart';
 import 'package:lua_node_studio/ai/ai_config.dart';
+import 'package:lua_node_studio/ai/ai_session_store.dart';
 import 'package:lua_node_studio/ai/ai_chat_page.dart';
 import 'package:lua_node_studio/ai/graph_blueprint.dart';
 import 'package:lua_node_studio/storage/project_store.dart';
@@ -86,6 +87,27 @@ void main() {
       expect(loaded.baseUrl, 'https://api.test/v1');
       expect(loaded.apiKey, 'sk-1');
       expect(loaded.model, 'm1');
+      dir.deleteSync(recursive: true);
+    });
+
+    test('AiSessionStore 保存、读取与清空', () async {
+      final dir = Directory.systemTemp.createTempSync('ai_session_store_');
+      final store = ProjectStore(directory: dir);
+      final sessionStore = AiSessionStore(store);
+      await sessionStore.save(const AiSessionData(
+        entries: [
+          AiSessionEntry(kind: 'user', text: '写个求和'),
+          AiSessionEntry(kind: 'assistant', text: '已生成', raw: '{"nodes": []}'),
+        ],
+        draft: '未发送的草稿',
+      ));
+      final loaded = await sessionStore.load();
+      expect(loaded.entries.length, 2);
+      expect(loaded.entries.first.text, '写个求和');
+      expect(loaded.entries.last.raw, contains('nodes'));
+      expect(loaded.draft, '未发送的草稿');
+      await sessionStore.clear();
+      expect((await sessionStore.load()).entries, isEmpty);
       dir.deleteSync(recursive: true);
     });
   });
@@ -242,6 +264,60 @@ void main() {
     expect(find.text('保存并测试连接'), findsOneWidget);
     // 未配置时直接进入配置页，不显示对话输入框
     expect(find.byKey(const ValueKey('ai-input')), findsNothing);
+    dir.deleteSync(recursive: true);
+  });
+
+  testWidgets('离开 AI 页面后再回来会恢复上次对话和输入草稿', (tester) async {
+    final dir = Directory.systemTemp.createTempSync('ai_session_');
+    final store = ProjectStore(directory: dir);
+    const cfg = AiConfig(
+        baseUrl: 'https://api.test/v1', apiKey: 'k', model: 'm');
+    final transport = _FakeTransport(_validBlueprint);
+
+    await tester.pumpWidget(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: AiChatPage(store: store, initialConfig: cfg, transport: transport),
+    ));
+    await tester.pump();
+    await tester.enterText(
+        find.byKey(const ValueKey('ai-input')), '写一个 1 到 10 求和');
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('ai-send')));
+    for (int i = 0; i < 20; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(find.byKey(const ValueKey('ai-open-graph')), findsOneWidget);
+
+    // 输入一段未发送的草稿
+    await tester.enterText(
+        find.byKey(const ValueKey('ai-input')), '再写一个阶乘');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 120)));
+
+    // 模拟用户返回：卸载页面后重新进入
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 120)));
+
+    await tester.pumpWidget(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: AiChatPage(store: store, initialConfig: cfg, transport: transport),
+    ));
+    for (int i = 0; i < 25; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    expect(find.textContaining('已恢复上次的 AI 对话'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ai-open-graph')), findsOneWidget);
+    final field =
+        tester.widget<TextField>(find.byKey(const ValueKey('ai-input')));
+    expect(field.controller?.text, '再写一个阶乘');
     dir.deleteSync(recursive: true);
   });
 }

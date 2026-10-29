@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
@@ -6,6 +8,7 @@ import '../storage/project_store.dart';
 import '../ui/editor_page.dart';
 import 'ai_client.dart';
 import 'ai_config.dart';
+import 'ai_session_store.dart';
 import 'graph_blueprint.dart';
 
 /// 自定义 AI API 入口 + 对话生成节点图。
@@ -56,7 +59,11 @@ class _ChatEntry {
 
 class _AiChatPageState extends State<AiChatPage> {
   late final AiConfigStore _configStore = AiConfigStore(widget.store);
+  late final AiSessionStore _sessionStore = AiSessionStore(widget.store);
   late final AiClient _client = AiClient(transport: widget.transport);
+
+  Timer? _saveTimer;
+  bool _restored = false;
 
   AiConfig _config = AiConfig.empty;
   bool _loadingConfig = true;
@@ -90,16 +97,81 @@ class _AiChatPageState extends State<AiChatPage> {
     } else {
       _loadConfig();
     }
+    _restoreSession();
   }
 
   @override
   void dispose() {
+    _saveTimer?.cancel();
+    _persistSession();
     _input.dispose();
     _scroll.dispose();
     _baseUrl.dispose();
     _apiKey.dispose();
     _model.dispose();
     super.dispose();
+  }
+
+  Future<void> _restoreSession() async {
+    try {
+      final data = await _sessionStore.load();
+      if (!mounted) return;
+      // 用户在恢复完成前已经发起了新对话，就不要用旧记录覆盖。
+      if (_entries.isNotEmpty) return;
+      setState(() {
+        _entries.clear();
+        for (final item in data.entries) {
+          switch (item.kind) {
+            case 'user':
+              _entries.add(_ChatEntry.user(item.text));
+            case 'error':
+              _entries.add(_ChatEntry.error(item.text));
+            case 'assistant':
+              final parsed =
+                  item.raw.isEmpty ? null : GraphBlueprint.parse(item.raw);
+              _entries.add(_ChatEntry.assistant(
+                item.text,
+                item.raw,
+                (parsed != null && parsed.ok) ? parsed : null,
+              ));
+          }
+        }
+        if (data.draft.isNotEmpty && _input.text.isEmpty) {
+          _input.text = data.draft;
+          _input.selection =
+              TextSelection.collapsed(offset: _input.text.length);
+        }
+        _restored = _entries.isNotEmpty;
+      });
+      if (_entries.isNotEmpty) _scrollToBottom();
+    } catch (_) {
+      // 历史记录读不出来不影响正常使用。
+    }
+  }
+
+  void _schedulePersist() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 350), _persistSession);
+  }
+
+  Future<void> _persistSession() async {
+    try {
+      await _sessionStore.save(AiSessionData(
+        entries: [
+          for (final e in _entries)
+            AiSessionEntry(kind: e.kind.name, text: e.text, raw: e.raw),
+        ],
+        draft: _input.text,
+      ));
+    } catch (_) {
+      // 忽略写入失败，不影响当前对话。
+    }
+  }
+
+  void _clearChat() {
+    setState(_entries.clear);
+    _input.clear();
+    _sessionStore.clear();
   }
 
   void _fillConfigFields(AiConfig config) {
@@ -224,7 +296,9 @@ class _AiChatPageState extends State<AiChatPage> {
     setState(() {
       _entries.add(_ChatEntry.user(text));
       _sending = true;
+      _restored = false;
     });
+    _schedulePersist();
     _scrollToBottom();
     try {
       final messages = <AiMessage>[
@@ -264,6 +338,7 @@ class _AiChatPageState extends State<AiChatPage> {
         _entries.add(_ChatEntry.error(L10n.t('AI 请求失败：$e', 'AI request failed: $e')));
       });
     }
+    _schedulePersist();
     _scrollToBottom();
   }
 
@@ -329,7 +404,7 @@ class _AiChatPageState extends State<AiChatPage> {
           if (_entries.isNotEmpty)
             IconButton(
               tooltip: L10n.t('清空对话', 'Clear chat'),
-              onPressed: () => setState(_entries.clear),
+              onPressed: _clearChat,
               icon: const Icon(Icons.delete_sweep_outlined, size: 20),
             ),
         ],
@@ -548,6 +623,19 @@ class _AiChatPageState extends State<AiChatPage> {
       controller: _scroll,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
       children: [
+        if (_restored && _entries.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(children: [
+              const Icon(Icons.history_rounded,
+                  size: 14, color: Color(0xFF7A8DAE)),
+              const SizedBox(width: 6),
+              Text(
+                L10n.t('已恢复上次的 AI 对话', 'Restored your previous AI chat'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF7A8DAE)),
+              ),
+            ]),
+          ),
         if (_entries.isEmpty)
           _welcomeCard()
         else
@@ -819,6 +907,7 @@ class _AiChatPageState extends State<AiChatPage> {
               key: const ValueKey('ai-input'),
               controller: _input,
               readOnly: !_ready,
+              onChanged: (_) => _schedulePersist(),
               onTap: () {
                 if (!_ready) setState(() => _editingConfig = true);
               },
