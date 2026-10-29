@@ -2,7 +2,7 @@
 
 Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。同一份代码支持 **Android** 与 **Windows** 双平台。
 
-当前版本 **v1.7.0 (build 10)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换，并支持接入自定义 AI API（OpenAI 兼容）用对话直接生成节点图。
+官网：[ongikan.github.io/lua-node-studio](https://ongikan.github.io/lua-node-studio/) ｜ 当前版本 **v1.7.0 (build 10)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换，并支持接入自定义 AI API（OpenAI 兼容）用对话直接生成节点图。
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
 
@@ -46,7 +46,7 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 ## 下载与安装
 
-两个平台的产物都发布在 [Releases](https://github.com/ONGIKAN/lua-node-studio/releases)；仓库内也附带了最新 Android 安装包。
+两个平台的产物都发布在 [Releases](https://github.com/ONGIKAN/lua-node-studio/releases)；也可以在[官网](https://ongikan.github.io/lua-node-studio/)直接下载；仓库内也附带了最新 Android 安装包。
 
 ### Android
 
