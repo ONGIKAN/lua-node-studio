@@ -63,4 +63,41 @@ class ProjectStore {
   }
 
   Future<String> directoryPath() async => (await _dir()).path;
+
+  // ------------------------------------------------------------- 设置项
+
+  /// 设置保存在 `__settings.json`，文件名以 `__` 开头，不会出现在工程列表里。
+  Future<File> _settingsFile() async {
+    final dir = await _dir();
+    return File('${dir.path}${Platform.pathSeparator}__settings.json');
+  }
+
+  Future<Map<String, dynamic>> _readSettings() async {
+    try {
+      final f = await _settingsFile();
+      if (!await f.exists()) return {};
+      final raw = await f.readAsString();
+      final map = jsonDecode(raw);
+      return map is Map<String, dynamic> ? map : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<String?> loadSetting(String key) async {
+    final map = await _readSettings();
+    final v = map[key];
+    return v is String ? v : null;
+  }
+
+  Future<void> saveSetting(String key, String value) async {
+    final map = await _readSettings();
+    map[key] = value;
+    try {
+      final f = await _settingsFile();
+      await f.writeAsString(jsonEncode(map));
+    } catch (_) {
+      // 写设置失败不影响主流程
+    }
+  }
 }

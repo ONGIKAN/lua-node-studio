@@ -3,6 +3,8 @@ import 'dart:isolate';
 
 import 'package:lua_dardo_plus/lua.dart';
 
+import '../l10n/l10n.dart';
+
 class LuaRunResult {
   final bool success;
   final String output;
@@ -37,13 +39,14 @@ class DartLuaEngine implements LuaEngine {
   String get name => 'LuaDardo';
 
   @override
-  String get version => 'Lua 5.3 (纯 Dart)';
+  String get version => L10n.t('Lua 5.3 (纯 Dart)', 'Lua 5.3 (pure Dart)');
 
   @override
   Future<LuaRunResult> run(String code,
       {Duration timeout = const Duration(seconds: 8)}) async {
     final port = ReceivePort();
-    final isolate = await Isolate.spawn(_runIsolate, <Object>[port.sendPort, code]);
+    final isolate = await Isolate.spawn(
+        _runIsolate, <Object>[port.sendPort, code, L10n.language]);
     final completer = Completer<List<String>>();
     final sub = port.listen((msg) {
       if (msg is List && !completer.isCompleted) {
@@ -58,7 +61,8 @@ class DartLuaEngine implements LuaEngine {
         onTimeout: () => <String>[
           'timeout',
           '',
-          '执行超时（${timeout.inSeconds} 秒），已强制中止',
+          L10n.t('执行超时（${timeout.inSeconds} 秒），已强制中止',
+              'Execution timed out (${timeout.inSeconds}s); aborted'),
         ],
       );
     } finally {
@@ -80,12 +84,16 @@ class DartLuaEngine implements LuaEngine {
     }
   }
 
-  static String _cap(String s) =>
-      s.length > 200000 ? '${s.substring(0, 200000)}\n...（输出过长已截断）' : s;
+  static String _cap(String s) => s.length > 200000
+      ? '${s.substring(0, 200000)}\n'
+          '${L10n.t('...（输出过长已截断）', '... (output truncated)')}'
+      : s;
 
   static void _runIsolate(List<Object> args) {
     final send = args[0] as SendPort;
     final code = args[1] as String;
+    // isolate 看不到主 isolate 的静态状态，先把语言带进来
+    if (args.length > 2) L10n.setLanguage(args[2] as String);
     final buffer = StringBuffer();
 
     try {
@@ -97,16 +105,17 @@ class DartLuaEngine implements LuaEngine {
       final status = state.loadString(code);
       if (status != ThreadStatus.luaOk) {
         final msg = state.getTop() > 0
-            ? (state.toStr(-1) ?? '语法错误')
-            : '语法错误';
+            ? (state.toStr(-1) ?? L10n.t('语法错误', 'Syntax error'))
+            : L10n.t('语法错误', 'Syntax error');
         send.send(<String>['error', buffer.toString(), _clean(msg)]);
         return;
       }
 
       final callStatus = state.pCall(0, 0, 0);
       if (callStatus != ThreadStatus.luaOk) {
-        final msg =
-            state.getTop() > 0 ? (state.toStr(-1) ?? '运行错误') : '运行错误';
+        final msg = state.getTop() > 0
+            ? (state.toStr(-1) ?? L10n.t('运行错误', 'Runtime error'))
+            : L10n.t('运行错误', 'Runtime error');
         send.send(<String>['error', buffer.toString(), _clean(msg)]);
         return;
       }

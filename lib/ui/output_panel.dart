@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../state/graph_controller.dart';
 import 'edit_dialogs.dart';
 
@@ -29,8 +30,12 @@ class OutputPanelState extends State<OutputPanel> {
   Widget build(BuildContext context) {
     // 只订阅代码/运行/状态，不订阅画布位置：拖节点时这里不重建
     return AnimatedBuilder(
-      animation:
-          Listenable.merge([c.codeNotifier, c.runNotifier, c.statusNotifier]),
+      animation: Listenable.merge([
+        c.codeNotifier,
+        c.runNotifier,
+        c.statusNotifier,
+        L10n.listenable,
+      ]),
       builder: (context, _) {
         final gen = c.lastGen;
         return Container(
@@ -47,7 +52,8 @@ class OutputPanelState extends State<OutputPanel> {
                 child: IndexedStack(
                   index: _tab,
                   children: [
-                    _codeView(gen?.code ?? '-- 还没有内容'),
+                    _codeView(
+                        gen?.code ?? L10n.t('-- 还没有内容', '-- No content yet')),
                     _consoleView(),
                   ],
                 ),
@@ -68,27 +74,27 @@ class OutputPanelState extends State<OutputPanel> {
       ),
       child: Row(
         children: [
-          _tabBtn('Lua 代码', 0),
-          _tabBtn('输出', 1,
+          _tabBtn(L10n.t('Lua 代码', 'Lua code'), 0),
+          _tabBtn(L10n.t('输出', 'Output'), 1,
               badge: c.lastRun?.success == false ? Colors.red : null),
           const Spacer(),
           if (_tab == 0)
             IconButton(
-              tooltip: '复制代码',
+              tooltip: L10n.t('复制代码', 'Copy code'),
               icon: const Icon(Icons.copy_all_outlined, size: 17),
               onPressed: () {
                 copyToClipboard(c.lastGen?.code ?? '');
                 ScaffoldMessenger.of(context)
                   ..clearSnackBars()
-                  ..showSnackBar(const SnackBar(
-                    content: Text('代码已复制'),
-                    duration: Duration(seconds: 1),
+                  ..showSnackBar(SnackBar(
+                    content: Text(L10n.t('代码已复制', 'Code copied')),
+                    duration: const Duration(seconds: 1),
                   ));
               },
             ),
           if (_tab == 1)
             IconButton(
-              tooltip: '清空',
+              tooltip: L10n.t('清空', 'Clear'),
               icon: const Icon(Icons.delete_sweep_outlined, size: 17),
               onPressed: c.clearRun,
             ),
@@ -202,16 +208,20 @@ class OutputPanelState extends State<OutputPanel> {
               ),
               const SizedBox(width: 6),
               Text(
-                c.statusMessage ?? '尚未运行',
+                c.statusMessage ?? L10n.t('尚未运行', 'Not run yet'),
                 style: const TextStyle(fontSize: 11, color: Color(0xFF9A9AA4)),
               ),
             ],
           ),
           const SizedBox(height: 8),
           if (run == null)
-            const Text(
-              '点右上角的 ▶ 运行生成的 Lua 脚本。\n输出里的每一次 print 都会显示在这里。',
-              style: TextStyle(
+            Text(
+              L10n.t(
+                '点右上角的 ▶ 运行生成的 Lua 脚本。\n输出里的每一次 print 都会显示在这里。',
+                'Click ▶ in the top-right corner to run the generated Lua script.\n'
+                    'Every print from the output will show up here.',
+              ),
+              style: const TextStyle(
                   fontSize: 11.5, color: Color(0xFF6E6E78), height: 1.6),
             )
           else ...[
@@ -238,8 +248,9 @@ class OutputPanelState extends State<OutputPanel> {
               ),
             ],
             if (run.output.isEmpty && run.error == null)
-              const Text('（没有任何输出）',
-                  style: TextStyle(fontSize: 11.5, color: Color(0xFF6E6E78))),
+              Text(L10n.t('（没有任何输出）', '(no output)'),
+                  style: const TextStyle(
+                      fontSize: 11.5, color: Color(0xFF6E6E78))),
           ],
         ],
       ),

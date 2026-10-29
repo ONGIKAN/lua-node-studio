@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
 import '../models/node_spec.dart';
 import '../samples/sample_catalog.dart';
 
@@ -34,10 +35,11 @@ Future<String?> showTextPrompt(
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(L10n.t('取消', 'Cancel'))),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, ctrl.text),
-          child: const Text('确定'),
+          child: Text(L10n.t('确定', 'OK')),
         ),
       ],
     ),
@@ -55,7 +57,9 @@ Future<void> editField(
     final picked = await showDialog<String>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: Text('${field.label}（${spec.title}）',
+        title: Text(
+            L10n.t('${field.label}（${spec.title}）',
+                '${field.label} (${spec.title})'),
             style: const TextStyle(fontSize: 15)),
         children: [
           for (final opt in field.options)
@@ -101,9 +105,10 @@ Future<void> editLiteral(
 ) async {
   final v = await showTextPrompt(
     context,
-    title: '${port.label}（Lua 表达式）',
+    title: L10n.t('${port.label}（Lua 表达式）', '${port.label} (Lua expression)'),
     initial: current,
-    hint: '例如 42 / "文本" / sum / (a+b)',
+    hint: L10n.t(
+        '例如 42 / "文本" / sum / (a+b)', 'e.g. 42 / "text" / sum / (a+b)'),
     mono: true,
   );
   if (v != null && v.trim().isNotEmpty) onSave(v.trim());
@@ -113,7 +118,7 @@ Future<bool> confirm(
   BuildContext context,
   String title, {
   String? message,
-  String okLabel = '确定',
+  String? okLabel,
 }) async {
   final r = await showDialog<bool>(
     context: context,
@@ -122,9 +127,11 @@ Future<bool> confirm(
       content: message == null ? null : Text(message),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(L10n.t('取消', 'Cancel'))),
         FilledButton(
-            onPressed: () => Navigator.pop(ctx, true), child: Text(okLabel)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(okLabel ?? L10n.t('确定', 'OK'))),
       ],
     ),
   );
@@ -140,7 +147,8 @@ Future<SampleEntry?> showSamplePicker(BuildContext context) {
   return showDialog<SampleEntry>(
     context: context,
     builder: (ctx) => SimpleDialog(
-      title: const Text('载入示例图', style: TextStyle(fontSize: 16)),
+      title: Text(L10n.t('载入示例图', 'Load sample graph'),
+          style: const TextStyle(fontSize: 16)),
       children: [
         for (final s in kSamples)
           SimpleDialogOption(
@@ -151,13 +159,13 @@ Future<SampleEntry?> showSamplePicker(BuildContext context) {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    s.title,
+                    s.displayTitle,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    s.description,
+                    s.displayDescription,
                     style: const TextStyle(
                         fontSize: 12, color: Color(0xFF9A9AA4)),
                   ),

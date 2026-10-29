@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/graph.dart';
 import '../models/node_spec.dart';
 import '../state/graph_controller.dart';
@@ -410,9 +411,13 @@ class NodeCanvasState extends State<NodeCanvas> {
       // 已连线的输入用的是上游的值，默认值此时无效，说清楚比默默无反应好
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-          content: Text('这个输入已经连线了，先断开连线才能改默认值'),
-          duration: Duration(seconds: 2),
+        ..showSnackBar(SnackBar(
+          content: Text(L10n.t(
+            '这个输入已经连线了，先断开连线才能改默认值',
+            'This input is connected; disconnect it before editing the '
+                'default value',
+          )),
+          duration: const Duration(seconds: 2),
         ));
       return;
     }
@@ -426,7 +431,8 @@ class NodeCanvasState extends State<NodeCanvas> {
     if (nearestPort(p) != null) return;
     final link = _hitLink(p);
     if (link != null) {
-      final ok = await confirm(context, '删除这条连线？');
+      final ok = await confirm(
+          context, L10n.t('删除这条连线？', 'Delete this connection?'));
       if (ok) c.deleteLink(link);
       return;
     }
@@ -458,9 +464,13 @@ class NodeCanvasState extends State<NodeCanvas> {
     if (!ok) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-          content: Text('这两个端口接不上：要「输出 → 输入」，执行流只连执行流'),
-          duration: Duration(seconds: 2),
+        ..showSnackBar(SnackBar(
+          content: Text(L10n.t(
+            '这两个端口接不上：要「输出 → 输入」，执行流只连执行流',
+            'These ports cannot be connected: use output → input, '
+                'and exec flow only connects to exec flow',
+          )),
+          duration: const Duration(seconds: 2),
         ));
     }
   }
@@ -507,7 +517,7 @@ class NodeCanvasState extends State<NodeCanvas> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([c, c.layoutTick]),
+      animation: Listenable.merge([c, c.layoutTick, L10n.listenable]),
       builder: (context, _) {
         final m = Matrix4.identity()
           ..translateByDouble(_offset.dx, _offset.dy, 0, 1)
@@ -606,9 +616,11 @@ class NodeCanvasState extends State<NodeCanvas> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _pill(Icons.add, '节点', openPaletteAtCenter, primary: true),
-          _pill(Icons.auto_awesome_mosaic_outlined, '整理', autoLayout),
-          _pill(Icons.fit_screen_outlined, '适应', fitToContent),
+          _pill(Icons.add, L10n.t('节点', 'Nodes'), openPaletteAtCenter,
+              primary: true),
+          _pill(Icons.auto_awesome_mosaic_outlined, L10n.t('整理', 'Tidy up'),
+              autoLayout),
+          _pill(Icons.fit_screen_outlined, L10n.t('适应', 'Fit'), fitToContent),
         ],
       ),
     );
@@ -655,16 +667,22 @@ class NodeCanvasState extends State<NodeCanvas> {
           const Icon(Icons.touch_app_outlined,
               size: 16, color: Color(0xFF6FE08A)),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
-              '连线中：点绿圈里的端口完成连接，点空白取消',
-              style: TextStyle(fontSize: 11.5, color: Color(0xFFCDEBD5)),
+              L10n.t(
+                '连线中：点绿圈里的端口完成连接，点空白取消',
+                'Connecting: tap a port in the green circle to finish, '
+                    'tap empty space to cancel',
+              ),
+              style: const TextStyle(
+                  fontSize: 11.5, color: Color(0xFFCDEBD5)),
             ),
           ),
           GestureDetector(
             onTap: () => setState(() => _tapLink = null),
-            child: const Text('取消',
-                style: TextStyle(fontSize: 11.5, color: Color(0xFF6FE08A))),
+            child: Text(L10n.t('取消', 'Cancel'),
+                style: const TextStyle(
+                    fontSize: 11.5, color: Color(0xFF6FE08A))),
           ),
         ],
       ),
@@ -724,21 +742,21 @@ class NodeCanvasState extends State<NodeCanvas> {
             ListTile(
               dense: true,
               leading: const Icon(Icons.copy_all_outlined, size: 20),
-              title: const Text('复制节点'),
+              title: Text(L10n.t('复制节点', 'Duplicate node')),
               onTap: () => Navigator.pop(ctx, 'dup'),
             ),
             ListTile(
               dense: true,
               leading: const Icon(Icons.link_off, size: 20),
-              title: const Text('断开所有连线'),
+              title: Text(L10n.t('断开所有连线', 'Disconnect all')),
               onTap: () => Navigator.pop(ctx, 'unlink'),
             ),
             ListTile(
               dense: true,
               leading: const Icon(Icons.delete_outline,
                   size: 20, color: Color(0xFFE06C6C)),
-              title: const Text('删除节点',
-                  style: TextStyle(color: Color(0xFFE06C6C))),
+              title: Text(L10n.t('删除节点', 'Delete node'),
+                  style: const TextStyle(color: Color(0xFFE06C6C))),
               onTap: () => Navigator.pop(ctx, 'del'),
             ),
             const SizedBox(height: 8),

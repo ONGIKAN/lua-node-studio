@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
+
 /// 端口数据类型。exec 表示"执行流"，其余为数据流。
 enum PortType { exec, number, string, boolean, any }
 
@@ -24,15 +26,15 @@ extension PortTypeX on PortType {
   String get label {
     switch (this) {
       case PortType.exec:
-        return '执行';
+        return L10n.t('执行', 'Exec');
       case PortType.number:
-        return '数字';
+        return L10n.t('数字', 'Number');
       case PortType.string:
-        return '文本';
+        return L10n.t('文本', 'Text');
       case PortType.boolean:
-        return '布尔';
+        return L10n.t('布尔', 'Boolean');
       case PortType.any:
-        return '任意';
+        return L10n.t('任意', 'Any');
     }
   }
 }
@@ -51,7 +53,7 @@ final RegExp _identPattern = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
 /// 只保留合法且不重复的 Lua 标识符，因此节点上的参数端口不会出现非法名字。
 List<String> parseParamNames(String raw) {
   final out = <String>[];
-  for (final part in raw.split(RegExp(r'[,，、\s]+'))) {
+  for (final part in raw.split(RegExp(r'[,，、\\s]+'))) {
     final v = part.trim();
     if (v.isEmpty) continue;
     if (!_identPattern.hasMatch(v) || luaKeywords.contains(v)) continue;
@@ -88,7 +90,7 @@ class NodeField {
         options = const [];
 
   const NodeField.number(this.id, this.label,
-      {this.defaultValue = '0', this.hint = '数字'})
+      {this.defaultValue = '0', this.hint = '0'})
       : kind = FieldKind.number,
         options = const [];
 
@@ -153,217 +155,274 @@ Color categoryColor(NodeCategory c) {
 String categoryLabel(NodeCategory c) {
   switch (c) {
     case NodeCategory.flow:
-      return '流程';
+      return L10n.t('流程', 'Flow');
     case NodeCategory.data:
-      return '数据';
+      return L10n.t('数据', 'Data');
     case NodeCategory.math:
-      return '运算';
+      return L10n.t('运算', 'Math');
     case NodeCategory.control:
-      return '控制';
+      return L10n.t('控制', 'Control');
     case NodeCategory.function:
-      return '函数';
+      return L10n.t('函数', 'Function');
   }
 }
 
 /// 节点类型注册表。
+///
+/// 注册表按语言各生成一份并缓存：中文界面用原始文案，英文界面用英文文案。
+/// 切换语言后 [byType] 会取到另一份表，因此节点标题、端口名、字段名都会跟着变。
 class NodeRegistry {
-  static final Map<String, NodeSpec> byType = {
-    'start': const NodeSpec(
-      type: 'start',
-      title: '开始',
-      subtitle: '程序入口',
-      category: NodeCategory.flow,
-      outputs: [PortSpec('out', '执行', PortType.exec)],
-    ),
-    'print': const NodeSpec(
-      type: 'print',
-      title: '打印',
-      subtitle: 'print(...)',
-      category: NodeCategory.flow,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('value', '值', PortType.any, defaultLiteral: '"Hello"'),
-      ],
-      outputs: [PortSpec('out', '', PortType.exec)],
-    ),
-    'assign': const NodeSpec(
-      type: 'assign',
-      title: '变量赋值',
-      subtitle: 'name = value',
-      category: NodeCategory.data,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('value', '值', PortType.any, defaultLiteral: '0'),
-      ],
-      outputs: [PortSpec('out', '', PortType.exec)],
-      fields: [NodeField.text('name', '变量名', defaultValue: 'x')],
-    ),
-    'var': const NodeSpec(
-      type: 'var',
-      title: '读取变量',
-      category: NodeCategory.data,
-      outputs: [PortSpec('value', '值', PortType.any)],
-      fields: [NodeField.text('name', '变量名', defaultValue: 'x')],
-    ),
-    'number': const NodeSpec(
-      type: 'number',
-      title: '数字',
-      category: NodeCategory.data,
-      outputs: [PortSpec('value', '值', PortType.number)],
-      fields: [NodeField.number('value', '数值', defaultValue: '0')],
-    ),
-    'text': const NodeSpec(
-      type: 'text',
-      title: '文本',
-      category: NodeCategory.data,
-      outputs: [PortSpec('value', '值', PortType.string)],
-      fields: [NodeField.text('value', '内容', defaultValue: 'hello')],
-    ),
-    'bool': const NodeSpec(
-      type: 'bool',
-      title: '布尔',
-      category: NodeCategory.data,
-      outputs: [PortSpec('value', '值', PortType.boolean)],
-      fields: [
-        NodeField.select('value', '值', ['true', 'false'], defaultValue: 'true')
-      ],
-    ),
-    'math': const NodeSpec(
-      type: 'math',
-      title: '算术运算',
-      category: NodeCategory.math,
-      inputs: [
-        PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
-        PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
-      ],
-      outputs: [PortSpec('result', '结果', PortType.any)],
-      fields: [
-        NodeField.select('op', '运算符', ['+', '-', '*', '/', '%', '^', '..'],
-            defaultValue: '+')
-      ],
-    ),
-    'compare': const NodeSpec(
-      type: 'compare',
-      title: '比较',
-      category: NodeCategory.math,
-      inputs: [
-        PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
-        PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
-      ],
-      outputs: [PortSpec('result', '结果', PortType.boolean)],
-      fields: [
-        NodeField.select(
-            'op', '运算符', ['==', '~=', '<', '>', '<=', '>='], defaultValue: '==')
-      ],
-    ),
-    'logic': const NodeSpec(
-      type: 'logic',
-      title: '逻辑',
-      category: NodeCategory.math,
-      inputs: [
-        PortSpec('a', 'A', PortType.boolean, defaultLiteral: 'true'),
-        PortSpec('b', 'B', PortType.boolean, defaultLiteral: 'false'),
-      ],
-      outputs: [PortSpec('result', '结果', PortType.boolean)],
-      fields: [
-        NodeField.select('op', '运算符', ['and', 'or', 'not'], defaultValue: 'and')
-      ],
-    ),
-    'if': const NodeSpec(
-      type: 'if',
-      title: '条件分支',
-      subtitle: 'if / else',
-      category: NodeCategory.control,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('cond', '条件', PortType.boolean, defaultLiteral: 'true'),
-      ],
-      outputs: [
-        PortSpec('then', '真', PortType.exec),
-        PortSpec('else', '假', PortType.exec),
-      ],
-    ),
-    'for': const NodeSpec(
-      type: 'for',
-      title: 'for 循环',
-      category: NodeCategory.control,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('from', '起始', PortType.number, defaultLiteral: '1'),
-        PortSpec('to', '终止', PortType.number, defaultLiteral: '10'),
-        PortSpec('step', '步长', PortType.number, defaultLiteral: '1'),
-      ],
-      outputs: [
-        PortSpec('body', '循环体', PortType.exec),
-        PortSpec('done', '之后', PortType.exec),
-      ],
-      fields: [NodeField.text('var', '循环变量', defaultValue: 'i')],
-    ),
-    'while': const NodeSpec(
-      type: 'while',
-      title: 'while 循环',
-      category: NodeCategory.control,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('cond', '条件', PortType.boolean, defaultLiteral: 'true'),
-      ],
-      outputs: [
-        PortSpec('body', '循环体', PortType.exec),
-        PortSpec('done', '之后', PortType.exec),
-      ],
-    ),
-    'func': const NodeSpec(
-      type: 'func',
-      title: '定义函数',
-      category: NodeCategory.function,
-      inputs: [PortSpec('in', '', PortType.exec)],
-      outputs: [
-        PortSpec('body', '函数体', PortType.exec),
-        PortSpec('done', '之后', PortType.exec),
-      ],
-      fields: [
-        NodeField.text('name', '函数名', defaultValue: 'myFunc'),
-        NodeField.text('params', '参数',
-            defaultValue: '', hint: '逗号分隔，例如 a, b'),
-      ],
-    ),
-    'call': const NodeSpec(
-      type: 'call',
-      title: '调用函数',
-      subtitle: 'name(args)',
-      category: NodeCategory.function,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('arg1', '参数1', PortType.any, defaultLiteral: ''),
-        PortSpec('arg2', '参数2', PortType.any, defaultLiteral: ''),
-        PortSpec('arg3', '参数3', PortType.any, defaultLiteral: ''),
-      ],
-      outputs: [
-        PortSpec('out', '', PortType.exec),
-        PortSpec('ret', '返回值', PortType.any),
-      ],
-      fields: [NodeField.text('name', '函数名', defaultValue: 'myFunc')],
-    ),
-    'stop': const NodeSpec(
-      type: 'stop',
-      title: '结束',
-      subtitle: 'return',
-      category: NodeCategory.flow,
-      inputs: [
-        PortSpec('in', '', PortType.exec),
-        PortSpec('value', '返回值', PortType.any, defaultLiteral: ''),
-      ],
-    ),
-    'comment': const NodeSpec(
-      type: 'comment',
-      title: '注释',
-      category: NodeCategory.data,
-      fields: [NodeField.text('text', '内容', defaultValue: '说明', hint: '注释')],
-    ),
-  };
+  static final Map<String, Map<String, NodeSpec>> _byLanguage = {};
 
-  static NodeSpec of(String type) =>
-      byType[type] ?? byType['comment']!;
+  /// 当前语言的节点表。
+  static Map<String, NodeSpec> get byType => _byLanguage.putIfAbsent(
+        L10n.language,
+        () => _build(L10n.language),
+      );
+
+  static NodeSpec of(String type) => byType[type] ?? byType['comment']!;
 
   static List<NodeSpec> get all => byType.values.toList();
+
+  static Map<String, NodeSpec> _build(String language) {
+    final en = language == AppLanguage.en;
+    String t(String zh, String english) => en ? english : zh;
+
+    return {
+      'start': NodeSpec(
+        type: 'start',
+        title: t('开始', 'Start'),
+        subtitle: t('程序入口', 'program entry'),
+        category: NodeCategory.flow,
+        outputs: [PortSpec('out', t('执行', 'exec'), PortType.exec)],
+      ),
+      'print': NodeSpec(
+        type: 'print',
+        title: t('打印', 'Print'),
+        subtitle: 'print(...)',
+        category: NodeCategory.flow,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('value', t('值', 'value'), PortType.any,
+              defaultLiteral: '"Hello"'),
+        ],
+        outputs: [PortSpec('out', '', PortType.exec)],
+      ),
+      'assign': NodeSpec(
+        type: 'assign',
+        title: t('变量赋值', 'Assign'),
+        subtitle: 'name = value',
+        category: NodeCategory.data,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('value', t('值', 'value'), PortType.any,
+              defaultLiteral: '0'),
+        ],
+        outputs: [PortSpec('out', '', PortType.exec)],
+        fields: [
+          NodeField.text('name', t('变量名', 'variable'),
+              defaultValue: 'x'),
+        ],
+      ),
+      'var': NodeSpec(
+        type: 'var',
+        title: t('读取变量', 'Read variable'),
+        category: NodeCategory.data,
+        outputs: [PortSpec('value', t('值', 'value'), PortType.any)],
+        fields: [
+          NodeField.text('name', t('变量名', 'variable'),
+              defaultValue: 'x'),
+        ],
+      ),
+      'number': NodeSpec(
+        type: 'number',
+        title: t('数字', 'Number'),
+        category: NodeCategory.data,
+        outputs: [PortSpec('value', t('值', 'value'), PortType.number)],
+        fields: [
+          NodeField.number('value', t('数值', 'value'),
+              defaultValue: '0', hint: t('数字', 'number')),
+        ],
+      ),
+      'text': NodeSpec(
+        type: 'text',
+        title: t('文本', 'Text'),
+        category: NodeCategory.data,
+        outputs: [PortSpec('value', t('值', 'value'), PortType.string)],
+        fields: [
+          NodeField.text('value', t('内容', 'content'), defaultValue: 'hello'),
+        ],
+      ),
+      'bool': NodeSpec(
+        type: 'bool',
+        title: t('布尔', 'Boolean'),
+        category: NodeCategory.data,
+        outputs: [PortSpec('value', t('值', 'value'), PortType.boolean)],
+        fields: [
+          NodeField.select('value', t('值', 'value'), ['true', 'false'],
+              defaultValue: 'true')
+        ],
+      ),
+      'math': NodeSpec(
+        type: 'math',
+        title: t('算术运算', 'Arithmetic'),
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
+        ],
+        outputs: [PortSpec('result', t('结果', 'result'), PortType.any)],
+        fields: [
+          NodeField.select('op', t('运算符', 'operator'),
+              ['+', '-', '*', '/', '%', '^', '..'],
+              defaultValue: '+')
+        ],
+      ),
+      'compare': NodeSpec(
+        type: 'compare',
+        title: t('比较', 'Compare'),
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.any, defaultLiteral: '0'),
+          PortSpec('b', 'B', PortType.any, defaultLiteral: '0'),
+        ],
+        outputs: [
+          PortSpec('result', t('结果', 'result'), PortType.boolean)
+        ],
+        fields: [
+          NodeField.select('op', t('运算符', 'operator'),
+              ['==', '~=', '<', '>', '<=', '>='],
+              defaultValue: '==')
+        ],
+      ),
+      'logic': NodeSpec(
+        type: 'logic',
+        title: t('逻辑', 'Logic'),
+        category: NodeCategory.math,
+        inputs: [
+          PortSpec('a', 'A', PortType.boolean, defaultLiteral: 'true'),
+          PortSpec('b', 'B', PortType.boolean, defaultLiteral: 'false'),
+        ],
+        outputs: [
+          PortSpec('result', t('结果', 'result'), PortType.boolean)
+        ],
+        fields: [
+          NodeField.select('op', t('运算符', 'operator'),
+              ['and', 'or', 'not'],
+              defaultValue: 'and')
+        ],
+      ),
+      'if': NodeSpec(
+        type: 'if',
+        title: t('条件分支', 'If'),
+        subtitle: 'if / else',
+        category: NodeCategory.control,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('cond', t('条件', 'condition'), PortType.boolean,
+              defaultLiteral: 'true'),
+        ],
+        outputs: [
+          PortSpec('then', t('真', 'true'), PortType.exec),
+          PortSpec('else', t('假', 'false'), PortType.exec),
+        ],
+      ),
+      'for': NodeSpec(
+        type: 'for',
+        title: t('for 循环', 'For loop'),
+        category: NodeCategory.control,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('from', t('起始', 'start'), PortType.number,
+              defaultLiteral: '1'),
+          PortSpec('to', t('终止', 'end'), PortType.number,
+              defaultLiteral: '10'),
+          PortSpec('step', t('步长', 'step'), PortType.number,
+              defaultLiteral: '1'),
+        ],
+        outputs: [
+          PortSpec('body', t('循环体', 'body'), PortType.exec),
+          PortSpec('done', t('之后', 'next'), PortType.exec),
+        ],
+        fields: [
+          NodeField.text('var', t('循环变量', 'loop variable'),
+              defaultValue: 'i'),
+        ],
+      ),
+      'while': NodeSpec(
+        type: 'while',
+        title: t('while 循环', 'While loop'),
+        category: NodeCategory.control,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('cond', t('条件', 'condition'), PortType.boolean,
+              defaultLiteral: 'true'),
+        ],
+        outputs: [
+          PortSpec('body', t('循环体', 'body'), PortType.exec),
+          PortSpec('done', t('之后', 'next'), PortType.exec),
+        ],
+      ),
+      'func': NodeSpec(
+        type: 'func',
+        title: t('定义函数', 'Define function'),
+        category: NodeCategory.function,
+        inputs: [PortSpec('in', '', PortType.exec)],
+        outputs: [
+          PortSpec('body', t('函数体', 'body'), PortType.exec),
+          PortSpec('done', t('之后', 'next'), PortType.exec),
+        ],
+        fields: [
+          NodeField.text('name', t('函数名', 'name'),
+              defaultValue: 'myFunc'),
+          NodeField.text('params', t('参数', 'params'),
+              defaultValue: '',
+              hint: t('逗号分隔，例如 a, b', 'comma separated, e.g. a, b')),
+        ],
+      ),
+      'call': NodeSpec(
+        type: 'call',
+        title: t('调用函数', 'Call function'),
+        subtitle: 'name(args)',
+        category: NodeCategory.function,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('arg1', t('参数1', 'arg 1'), PortType.any,
+              defaultLiteral: ''),
+          PortSpec('arg2', t('参数2', 'arg 2'), PortType.any,
+              defaultLiteral: ''),
+          PortSpec('arg3', t('参数3', 'arg 3'), PortType.any,
+              defaultLiteral: ''),
+        ],
+        outputs: [
+          PortSpec('out', '', PortType.exec),
+          PortSpec('ret', t('返回值', 'return'), PortType.any),
+        ],
+        fields: [
+          NodeField.text('name', t('函数名', 'name'),
+              defaultValue: 'myFunc'),
+        ],
+      ),
+      'stop': NodeSpec(
+        type: 'stop',
+        title: t('结束', 'Return'),
+        subtitle: 'return',
+        category: NodeCategory.flow,
+        inputs: [
+          PortSpec('in', '', PortType.exec),
+          PortSpec('value', t('返回值', 'value'), PortType.any,
+              defaultLiteral: ''),
+        ],
+      ),
+      'comment': NodeSpec(
+        type: 'comment',
+        title: t('注释', 'Comment'),
+        category: NodeCategory.data,
+        fields: [
+          NodeField.text('text', t('内容', 'text'),
+              defaultValue: t('说明', 'note'), hint: t('注释', 'comment')),
+        ],
+      ),
+    };
+  }
 }

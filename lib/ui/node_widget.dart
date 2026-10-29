@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/graph.dart';
 import '../models/node_spec.dart';
 
@@ -200,7 +201,9 @@ class NodeWidget extends StatelessWidget {
                   : const Color(0xFF3A3A40)),
         ),
         child: Text(
-          connected ? '已连线' : (text.isEmpty ? '空' : text),
+          connected
+              ? L10n.t('已连线', 'linked')
+              : (text.isEmpty ? L10n.t('空', 'empty') : text),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

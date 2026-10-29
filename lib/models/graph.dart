@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import 'node_spec.dart';
 
 /// 节点几何布局。全部解析式计算，方便端口命中测试与连线绘制。
@@ -77,7 +78,9 @@ class GraphNode {
     final base = NodeRegistry.of(type);
     if (type != 'func') return base;
     final raw = fields['params'] ?? _defaultField('params');
-    if (_dynSpec != null && _dynSpecKey == raw) return _dynSpec!;
+    // 语言切换后标题/端口文案会变，缓存键里带上语言
+    final key = '$raw|${L10n.language}';
+    if (_dynSpec != null && _dynSpecKey == key) return _dynSpec!;
     final params = parseParamNames(raw);
     _dynSpec = params.isEmpty
         ? base
@@ -94,7 +97,7 @@ class GraphNode {
             ],
             fields: base.fields,
           );
-    _dynSpecKey = raw;
+    _dynSpecKey = key;
     return _dynSpec!;
   }
 
@@ -278,7 +281,7 @@ class NodeGraph {
       };
 
   static NodeGraph fromJson(Map<String, dynamic> j) => NodeGraph(
-        name: j['name'] as String? ?? '未命名',
+        name: j['name'] as String? ?? L10n.t('未命名', 'Untitled'),
         nodes: (j['nodes'] as List)
             .map((e) => GraphNode.fromJson(e as Map<String, dynamic>))
             .toList(),

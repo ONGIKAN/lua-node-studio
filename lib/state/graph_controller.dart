@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../codegen/lua_generator.dart';
 import '../engine/lua_engine.dart';
+import '../l10n/l10n.dart';
 import '../models/auto_layout.dart';
 import '../models/graph.dart';
 import '../models/node_spec.dart';
@@ -22,6 +23,13 @@ class GraphController extends ChangeNotifier {
       : engine = engine ?? const DartLuaEngine() {
     _graph = buildSampleGraph();
     _regenerate();
+    L10n.notifier.addListener(_onLanguageChanged);
+  }
+
+  /// 切换语言后重新生成代码（节点标题/警告文案会变），并刷新界面。
+  void _onLanguageChanged() {
+    _regenerate();
+    notifyListeners();
   }
 
   final LuaEngine engine;
@@ -241,8 +249,11 @@ class GraphController extends ChangeNotifier {
     runNotifier.value = result;
     running = false;
     statusNotifier.value = result.success
-        ? '运行完成 · ${sw.elapsedMilliseconds}ms'
-        : (result.timedOut ? '执行超时' : '运行出错');
+        ? L10n.t('运行完成 · ${sw.elapsedMilliseconds}ms',
+            'Finished · ${sw.elapsedMilliseconds}ms')
+        : (result.timedOut
+            ? L10n.t('执行超时', 'Timed out')
+            : L10n.t('运行出错', 'Runtime error'));
     notifyListeners();
   }
 
@@ -271,7 +282,7 @@ class GraphController extends ChangeNotifier {
 
   void newGraph() {
     pushUndo();
-    _graph = NodeGraph(name: '未命名');
+    _graph = NodeGraph(name: L10n.t('未命名', 'Untitled'));
     _graph.nodes
         .add(GraphNode(id: 'start', type: 'start', pos: const Offset(60, 60)));
     selectedNodeId = null;
@@ -313,7 +324,7 @@ class GraphController extends ChangeNotifier {
     await store.save(name, _graph);
     currentFileName = name;
     dirty = false;
-    statusMessage = '已保存到本地：$name';
+    statusMessage = L10n.t('已保存到本地：$name', 'Saved locally: $name');
     notifyListeners();
   }
 
@@ -323,7 +334,7 @@ class GraphController extends ChangeNotifier {
     currentFileName = name;
     replaceGraph(g);
     dirty = false;
-    statusMessage = '已打开：$name';
+    statusMessage = L10n.t('已打开：$name', 'Opened: $name');
     notifyListeners();
   }
 
@@ -342,6 +353,7 @@ class GraphController extends ChangeNotifier {
 
   @override
   void dispose() {
+    L10n.notifier.removeListener(_onLanguageChanged);
     _autosave?.cancel();
     layoutTick.dispose();
     codeNotifier.dispose();

@@ -2,7 +2,7 @@
 
 Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。同一份代码支持 **Android** 与 **Windows** 双平台。
 
-当前版本 **v1.3.0 (build 4)**，Android 安装包见 [`installer/`](installer/)。
+当前版本 **v1.4.0 (build 5)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换。
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
 
@@ -15,7 +15,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 - JSON project save / autosave, undo / redo, automatic layout
 - 5 built-in sample graphs: 1-to-10 sum, factorial, Fibonacci, greatest common divisor, primality test
 - Cross-platform: **Android** (APK) and **Windows** (portable x64) — downloads on the [Releases](https://github.com/ONGIKAN/lua-node-studio/releases) page
-- Flutter / Dart, Material 3, 21 unit + golden tests
+- Flutter / Dart, Material 3, 28 unit + golden tests
+- **Bilingual UI**: switch between 中文 and English in the top-bar menu (`⋮`); the choice is remembered between launches
 
 ## 功能
 
@@ -28,6 +29,7 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 - **工程管理**：JSON 工程保存 / 打开，编辑自动保存并在下次启动时恢复（应用文档目录 `LuaNodeStudio/`）
 - **内置示例图**：1 到 10 求和、阶乘、斐波那契数列、最大公约数、素数判断，从菜单「载入示例图」一键切换（`lib/samples/`）
 - **撤销 / 重做**、节点自动布局
+- **中英双语界面**：顶栏 `⋮` 菜单底部可在「English / 中文」之间切换，选择保存在本地设置里，下次启动沿用（`lib/l10n/`）
 - 深色 Material 3 主题
 
 ## 下载与安装
@@ -38,8 +40,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | `installer/lua_node_studio-v1.3.0-release.apk` |
-| 版本 | 1.3.0 (versionCode 4) |
+| 文件 | `installer/lua_node_studio-v1.4.0-release.apk` |
+| 版本 | 1.4.0 (versionCode 5) |
 | 包名 | `com.luanode.lua_node_studio` |
 | 大小 | 约 51.5 MB |
 
@@ -49,8 +51,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | Release 资产 `lua_node_studio-v1.3.0-windows-x64.zip` |
-| 版本 | 1.3.0 |
+| 文件 | Release 资产 `lua_node_studio-v1.4.0-windows-x64.zip` |
+| 版本 | 1.4.0 |
 | 系统要求 | Windows 10 / 11 x64 |
 | 大小 | 约 12 MB |
 
@@ -80,6 +82,7 @@ lib/
   state/             图编辑控制器（撤销/重做、运行、保存）
   codegen/           节点图 → Lua 源码生成器
   engine/            Lua 运行时（Isolate + 超时控制）
+  l10n/              中英文文案与语言持久化
   storage/           工程 JSON 存取
   samples/           内置示例图
 android/             Android 平台工程
@@ -93,6 +96,13 @@ installer/           Android 安装包（APK）
 Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_dardo_plus)（纯 Dart Lua 5.3） · [path_provider](https://pub.dev/packages/path_provider)
 
 ## 更新日志
+
+### v1.4.0
+
+- 界面支持 **中文 / English** 一键切换（顶栏 `⋮` 菜单），选择保存在本地并自动恢复
+- 节点标题、端口名、字段名、菜单、对话框、工具栏、状态提示全部跟随语言切换
+- Lua 代码注释、警告与运行状态（超时/语法错误/输出截断等）同样支持中英文
+- 新增语言切换与持久化的自动化测试
 
 ### v1.3.0
 

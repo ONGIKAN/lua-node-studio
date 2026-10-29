@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/node_spec.dart';
 
 /// 节点面板：按分类列出所有节点类型。
@@ -25,8 +26,8 @@ Future<void> showNodePalette(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
               child: Row(
                 children: [
-                  const Text('添加节点',
-                      style: TextStyle(
+                  Text(L10n.t('添加节点', 'Add node'),
+                      style: const TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w600)),
                   const Spacer(),
                   IconButton(

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import '../l10n/l10n.dart';
 import '../models/graph.dart';
 
 /// 手工摆放示例图的小工具。
@@ -58,7 +59,7 @@ class SampleBuilder {
 /// print(("5! = " .. __ret_0))
 /// ```
 NodeGraph buildFactorialSample() {
-  final b = SampleBuilder('示例：阶乘 factorial');
+  final b = SampleBuilder(L10n.t('示例：阶乘 factorial', 'Sample: factorial'));
 
   b.node('start', 'start', 40, 260);
   b.node('func', 'func', 320, 240,
@@ -102,7 +103,7 @@ NodeGraph buildFactorialSample() {
 
 /// 斐波那契：循环里维护 a、b 两个变量，返回第 n 项。
 NodeGraph buildFibonacciSample() {
-  final b = SampleBuilder('示例：斐波那契数列');
+  final b = SampleBuilder(L10n.t('示例：斐波那契数列', 'Sample: Fibonacci'));
 
   b.node('start', 'start', 40, 260);
   b.node('func', 'func', 320, 240, fields: {'name': 'fib', 'params': 'n'});
@@ -156,7 +157,7 @@ NodeGraph buildFibonacciSample() {
 
 /// 最大公约数：两个参数 + while 循环 + 取模运算 + 返回值。
 NodeGraph buildGcdSample() {
-  final b = SampleBuilder('示例：最大公约数 gcd');
+  final b = SampleBuilder(L10n.t('示例：最大公约数 gcd', 'Sample: GCD'));
 
   b.node('start', 'start', 40, 260);
   b.node('func', 'func', 320, 240, fields: {'name': 'gcd', 'params': 'a, b'});
@@ -207,7 +208,7 @@ NodeGraph buildGcdSample() {
 
 /// 素数判断：if/else 提前返回、while 试除、布尔返回值。
 NodeGraph buildPrimeSample() {
-  final b = SampleBuilder('示例：素数判断');
+  final b = SampleBuilder(L10n.t('示例：素数判断', 'Sample: prime check'));
 
   b.node('start', 'start', 40, 260);
   b.node('func', 'func', 320, 240,

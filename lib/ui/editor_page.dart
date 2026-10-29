@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
+import '../l10n/language_store.dart';
 import '../state/graph_controller.dart';
 import 'edit_dialogs.dart';
 import 'node_canvas.dart';
@@ -51,7 +53,7 @@ class _EditorPageState extends State<EditorPage> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AnimatedBuilder(
-          animation: c,
+          animation: Listenable.merge([c, L10n.listenable]),
           builder: (context, _) => _appBar(),
         ),
       ),
@@ -131,8 +133,10 @@ class _EditorPageState extends State<EditorPage> {
         ),
       ),
       actions: [
-        _iconBtn(Icons.undo_rounded, '撤销', c.canUndo ? c.undo : null),
-        _iconBtn(Icons.redo_rounded, '重做', c.canRedo ? c.redo : null),
+        _iconBtn(Icons.undo_rounded, L10n.t('撤销', 'Undo'),
+            c.canUndo ? c.undo : null),
+        _iconBtn(Icons.redo_rounded, L10n.t('重做', 'Redo'),
+            c.canRedo ? c.redo : null),
         if (c.running)
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 12),
@@ -146,7 +150,7 @@ class _EditorPageState extends State<EditorPage> {
           )
         else
           IconButton(
-            tooltip: '运行',
+            tooltip: L10n.t('运行', 'Run'),
             icon: const Icon(Icons.play_arrow_rounded, size: 28),
             color: const Color(0xFF6FE08A),
             visualDensity: VisualDensity.compact,
@@ -154,7 +158,9 @@ class _EditorPageState extends State<EditorPage> {
           ),
         _iconBtn(
           _showPanel ? Icons.vertical_split_outlined : Icons.terminal_outlined,
-          _showPanel ? '收起面板' : '展开面板',
+          _showPanel
+              ? L10n.t('收起面板', 'Hide panel')
+              : L10n.t('展开面板', 'Show panel'),
           () => setState(() => _showPanel = !_showPanel),
         ),
         PopupMenuButton<String>(
@@ -178,14 +184,37 @@ class _EditorPageState extends State<EditorPage> {
                 await _open();
               case 'fit':
                 _canvasKey.currentState?.fitToContent();
+              case 'lang':
+                await LanguageStore.apply(
+                    L10n.isEnglish ? AppLanguage.zh : AppLanguage.en);
             }
           },
-          itemBuilder: (ctx) => const [
-            PopupMenuItem(value: 'save', child: Text('保存工程')),
-            PopupMenuItem(value: 'open', child: Text('打开工程')),
-            PopupMenuItem(value: 'new', child: Text('新建空白图')),
-            PopupMenuItem(value: 'sample', child: Text('载入示例图')),
-            PopupMenuItem(value: 'fit', child: Text('居中显示')),
+          itemBuilder: (ctx) => [
+            PopupMenuItem(
+                value: 'save', child: Text(L10n.t('保存工程', 'Save project'))),
+            PopupMenuItem(
+                value: 'open', child: Text(L10n.t('打开工程', 'Open project'))),
+            PopupMenuItem(
+                value: 'new',
+                child: Text(L10n.t('新建空白图', 'New blank graph'))),
+            PopupMenuItem(
+                value: 'sample',
+                child: Text(L10n.t('载入示例图', 'Load sample graph'))),
+            PopupMenuItem(
+                value: 'fit', child: Text(L10n.t('居中显示', 'Center view'))),
+            const PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'lang',
+              child: Row(
+                children: [
+                  const Icon(Icons.translate, size: 16),
+                  const SizedBox(width: 8),
+                  Text(L10n.isEnglish
+                      ? '中文'
+                      : 'English'),
+                ],
+              ),
+            ),
           ],
         ),
       ],
@@ -205,15 +234,17 @@ class _EditorPageState extends State<EditorPage> {
 
   Future<void> _renameGraph() async {
     final v = await showTextPrompt(context,
-        title: '工程名称', initial: c.graph.name, hint: '给这张图起个名字');
+        title: L10n.t('工程名称', 'Project name'),
+        initial: c.graph.name,
+        hint: L10n.t('给这张图起个名字', 'Give this graph a name'));
     if (v != null && v.trim().isNotEmpty) c.renameGraph(v.trim());
   }
 
   Future<void> _save() async {
     final v = await showTextPrompt(context,
-        title: '保存工程',
+        title: L10n.t('保存工程', 'Save project'),
         initial: c.currentFileName ?? c.graph.name,
-        hint: '文件名');
+        hint: L10n.t('文件名', 'File name'));
     if (v == null || v.trim().isEmpty) return;
     await c.saveAs(v.trim());
     if (!mounted) return;
@@ -222,7 +253,8 @@ class _EditorPageState extends State<EditorPage> {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
-        content: Text('已保存：${v.trim()}\n$dir'),
+        content: Text(L10n.t('已保存：${v.trim()}\n$dir',
+            'Saved: ${v.trim()}\n$dir')),
         duration: const Duration(seconds: 2),
       ));
   }
@@ -233,13 +265,16 @@ class _EditorPageState extends State<EditorPage> {
     if (names.isEmpty) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('还没有保存过任何工程')));
+        ..showSnackBar(SnackBar(
+            content:
+                Text(L10n.t('还没有保存过任何工程', 'No saved projects yet'))));
       return;
     }
     final picked = await showDialog<String>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('打开工程', style: TextStyle(fontSize: 15)),
+        title: Text(L10n.t('打开工程', 'Open project'),
+            style: const TextStyle(fontSize: 15)),
         children: [
           for (final n in names)
             SimpleDialogOption(

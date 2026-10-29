@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import '../l10n/l10n.dart';
 import '../models/graph.dart';
 
 /// 内置示例图：1 到 10 求和。
@@ -13,7 +14,8 @@ import '../models/graph.dart';
 /// print("sum =", sum)
 /// ```
 NodeGraph buildSampleGraph() {
-  final g = NodeGraph(name: '示例：1 到 10 求和');
+  final g = NodeGraph(
+      name: L10n.t('示例：1 到 10 求和', 'Sample: sum 1 to 10'));
 
   GraphNode add(String id, String type, Offset pos,
       {Map<String, String>? fields, Map<String, String>? literals}) {

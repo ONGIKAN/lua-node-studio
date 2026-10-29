@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'l10n/l10n.dart';
+import 'l10n/language_store.dart';
 import 'ui/editor_page.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Color(0xFF1D1D21),
@@ -11,17 +13,38 @@ void main() {
     systemNavigationBarColor: Color(0xFF141416),
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+  // 恢复上次选择的界面语言；读取失败时保持中文。
+  await LanguageStore.load();
   runApp(const LuaNodeApp());
 }
 
-class LuaNodeApp extends StatelessWidget {
+class LuaNodeApp extends StatefulWidget {
   const LuaNodeApp({super.key});
+
+  @override
+  State<LuaNodeApp> createState() => _LuaNodeAppState();
+}
+
+class _LuaNodeAppState extends State<LuaNodeApp> {
+  @override
+  void initState() {
+    super.initState();
+    L10n.listenable.addListener(_onLanguageChanged);
+  }
+
+  void _onLanguageChanged() => setState(() {});
+
+  @override
+  void dispose() {
+    L10n.listenable.removeListener(_onLanguageChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
-      title: 'Lua 节点工作室',
+      title: L10n.t('Lua 节点工作室', 'Lua Node Studio'),
       debugShowCheckedModeBanner: false,
       theme: base.copyWith(
         colorScheme: ColorScheme.fromSeed(
