@@ -65,6 +65,11 @@ class AiConfigStore {
   static const String _keyApiKey = 'ai.apiKey';
   static const String _keyModel = 'ai.model';
 
+  /// 用户是否真正完成过“保存并测试连接”。
+  ///
+  /// 仅凭默认地址/模型不算已配置——首次打开 AI 功能时仍然要提示先设置。
+  static const String _keyConfigured = 'ai.configured';
+
   Future<AiConfig> load() async {
     final baseUrl = await store.loadSetting(_keyBaseUrl);
     final apiKey = await store.loadSetting(_keyApiKey);
@@ -76,9 +81,20 @@ class AiConfigStore {
     );
   }
 
+  /// 用户是否已经成功保存并测试过连接。
+  Future<bool> loadConfigured() async {
+    final value = await store.loadSetting(_keyConfigured);
+    return value == 'true';
+  }
+
   Future<void> save(AiConfig config) async {
     await store.saveSetting(_keyBaseUrl, config.baseUrl.trim());
     await store.saveSetting(_keyApiKey, config.apiKey.trim());
     await store.saveSetting(_keyModel, config.model.trim());
+  }
+
+  /// 连接测试通过后标记为已配置。
+  Future<void> markConfigured() async {
+    await store.saveSetting(_keyConfigured, 'true');
   }
 }

@@ -209,6 +209,39 @@ void main() {
     }
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byKey(const ValueKey('pm-ai')), findsOneWidget);
+
+    // 点 AI 入口后，未配置 API 时应先提示去设置
+    await tester.tap(find.byKey(const ValueKey('pm-ai')));
+    for (int i = 0; i < 20; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byKey(const ValueKey('ai-not-configured')), findsOneWidget);
+    dir.deleteSync(recursive: true);
+  });
+
+  testWidgets('未配置 AI API 时提示先设置才能使用', (tester) async {
+    final dir = Directory.systemTemp.createTempSync('ai_unconfigured_');
+    final store = ProjectStore(directory: dir);
+    await tester.pumpWidget(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(useMaterial3: true),
+      home: AiChatPage(store: store),
+    ));
+    for (int i = 0; i < 15; i++) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const ValueKey('ai-not-configured')), findsOneWidget);
+    expect(find.textContaining('还没有设置 AI API'), findsOneWidget);
+    expect(find.text('保存并测试连接'), findsOneWidget);
+    // 未配置时直接进入配置页，不显示对话输入框
+    expect(find.byKey(const ValueKey('ai-input')), findsNothing);
     dir.deleteSync(recursive: true);
   });
 }

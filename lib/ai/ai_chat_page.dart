@@ -61,6 +61,7 @@ class _AiChatPageState extends State<AiChatPage> {
   AiConfig _config = AiConfig.empty;
   bool _loadingConfig = true;
   bool _editingConfig = false;
+  bool _saved = false;
   bool _sending = false;
   bool _testing = false;
   String? _configError;
@@ -75,13 +76,14 @@ class _AiChatPageState extends State<AiChatPage> {
   final TextEditingController _apiKey = TextEditingController();
   final TextEditingController _model = TextEditingController();
 
-  bool get _ready => _config.isConfigured;
+  bool get _ready => _saved && _config.isConfigured;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialConfig != null) {
       _config = widget.initialConfig!;
+      _saved = true;
       _fillConfigFields(_config);
       _loadingConfig = false;
       _editingConfig = !_ready;
@@ -109,9 +111,11 @@ class _AiChatPageState extends State<AiChatPage> {
   Future<void> _loadConfig() async {
     try {
       final config = await _configStore.load();
+      final saved = await _configStore.loadConfigured();
       if (!mounted) return;
       setState(() {
         _config = config;
+        _saved = saved;
         _fillConfigFields(config);
         _loadingConfig = false;
         _editingConfig = !_ready;
@@ -165,14 +169,22 @@ class _AiChatPageState extends State<AiChatPage> {
         timeout: const Duration(seconds: 40),
       );
       if (!mounted) return;
+      final ok = reply.trim().isNotEmpty;
+      if (ok) {
+        await _configStore.markConfigured();
+        if (!mounted) return;
+      }
       setState(() {
         _config = config;
         _testing = false;
-        _testOk = reply.trim().isNotEmpty;
+        _testOk = ok;
         _testMessage = _testOk
             ? L10n.t('连接成功，可以开始对话了', 'Connected. You can start chatting now')
             : L10n.t('连接成功但没有返回内容', 'Connected, but the reply was empty');
-        if (_testOk) _editingConfig = false;
+        if (_testOk) {
+          _saved = true;
+          _editingConfig = false;
+        }
       });
     } on AiException catch (e) {
       if (!mounted) return;
@@ -192,7 +204,20 @@ class _AiChatPageState extends State<AiChatPage> {
   }
 
   Future<void> _send([String? preset]) async {
-    if (_sending || !_ready) return;
+    if (_sending) return;
+    if (!_ready) {
+      // 没有配置 AI API 时不允许调用模型，先引导去完成设置。
+      setState(() => _editingConfig = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(L10n.t(
+              '请先设置 AI API，才能使用 AI 生成功能',
+              'Set up the AI API before using AI generation')),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
     final text = (preset ?? _input.text).trim();
     if (text.isEmpty) return;
     _input.clear();
@@ -281,6 +306,12 @@ class _AiChatPageState extends State<AiChatPage> {
               Text(_config.model,
                   style:
                       const TextStyle(fontSize: 10, color: Color(0xFF8A8A94))),
+            if (!_ready)
+              Text(
+                L10n.t('未设置 AI API', 'AI API not configured'),
+                style:
+                    const TextStyle(fontSize: 10, color: Color(0xFFFFC178)),
+              ),
           ],
         ),
         actions: [
@@ -324,6 +355,61 @@ class _AiChatPageState extends State<AiChatPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
       children: [
+        if (!_ready) ...[
+          Container(
+            key: const ValueKey('ai-not-configured'),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2A2118),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF6B4E2A)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.info_outline_rounded,
+                      size: 17, color: Color(0xFFFFC178)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      L10n.t('还没有设置 AI API',
+                          'AI API is not configured yet'),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                Text(
+                  L10n.t(
+                      '先完成下面的配置并测试连接，才能使用 AI 对话生成节点图。',
+                      'Complete the setup below and test the connection before using AI graph generation.'),
+                  style: const TextStyle(
+                      fontSize: 11.5, height: 1.5, color: Color(0xFFE2C9A0)),
+                ),
+                const SizedBox(height: 8),
+                for (final step in [
+                  L10n.t('① 填写接口地址和模型名',
+                      '1. Enter the API base URL and model'),
+                  L10n.t('② 填写 API Key（本地模型可留空）',
+                      '2. Enter the API key (optional for local models)'),
+                  L10n.t('③ 点「保存并测试连接」，成功后自动进入对话',
+                      '3. Tap "Save and test connection" to start chatting'),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Text(step,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            height: 1.45,
+                            color: Color(0xFFCDB99B))),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -490,6 +576,46 @@ class _AiChatPageState extends State<AiChatPage> {
   }
 
   Widget _welcomeCard() {
+    if (!_ready) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2118),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF6B4E2A)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                L10n.t('先设置 AI API，才能开始对话',
+                    'Set up the AI API to start chatting'),
+                style: const TextStyle(
+                    fontSize: 13.5, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            Text(
+              L10n.t(
+                  '填好接口地址、API Key 和模型名，保存并测试连接成功后，就可以让 AI 根据描述生成节点图了。',
+                  'Fill in the base URL, API key and model, then save and test the connection to let the AI build node graphs from your description.'),
+              style: const TextStyle(
+                  fontSize: 11.5, height: 1.5, color: Color(0xFFE2C9A0)),
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              key: const ValueKey('ai-go-config'),
+              onPressed: () => setState(() => _editingConfig = true),
+              icon: const Icon(Icons.settings_outlined, size: 16),
+              label: Text(L10n.t('去设置 AI API', 'Set up AI API')),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF3F8F62),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 36),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -692,12 +818,19 @@ class _AiChatPageState extends State<AiChatPage> {
             child: TextField(
               key: const ValueKey('ai-input'),
               controller: _input,
+              readOnly: !_ready,
+              onTap: () {
+                if (!_ready) setState(() => _editingConfig = true);
+              },
               minLines: 1,
               maxLines: 4,
               style: const TextStyle(fontSize: 12.5),
               decoration: InputDecoration(
-                hintText: L10n.t('描述你想要的程序，例如「1 到 100 求和」…',
-                    'Describe the program you want, e.g. "sum 1 to 100"'),
+                hintText: _ready
+                    ? L10n.t('描述你想要的程序，例如「1 到 100 求和」…',
+                        'Describe the program you want, e.g. "sum 1 to 100"')
+                    : L10n.t('请先设置 AI API 才能使用 AI 功能',
+                        'Set up the AI API first to use AI features'),
                 hintStyle: const TextStyle(fontSize: 11.5),
                 filled: true,
                 fillColor: const Color(0xFF1D1D23),
@@ -719,7 +852,9 @@ class _AiChatPageState extends State<AiChatPage> {
           const SizedBox(width: 8),
           IconButton.filled(
             key: const ValueKey('ai-send'),
-            tooltip: L10n.t('发送', 'Send'),
+            tooltip: _ready
+                ? L10n.t('发送', 'Send')
+                : L10n.t('请先设置 AI API', 'Set up the AI API first'),
             onPressed: _sending ? null : () => _send(),
             style: IconButton.styleFrom(
               backgroundColor: const Color(0xFF3F8F62),
