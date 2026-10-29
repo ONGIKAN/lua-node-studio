@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../models/node_spec.dart';
+
+Future<String?> showTextPrompt(
+  BuildContext context, {
+  required String title,
+  String initial = '',
+  String hint = '',
+  bool mono = false,
+  TextInputType? keyboardType,
+}) {
+  final ctrl = TextEditingController(text: initial);
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title, style: const TextStyle(fontSize: 16)),
+      content: TextField(
+        controller: ctrl,
+        autofocus: true,
+        keyboardType: keyboardType,
+        style: TextStyle(
+          fontFamily: mono ? 'monospace' : null,
+          fontSize: 14,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          isDense: true,
+          border: const OutlineInputBorder(),
+        ),
+        onSubmitted: (v) => Navigator.pop(ctx, v),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, ctrl.text),
+          child: const Text('确定'),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> editField(
+  BuildContext context,
+  NodeSpec spec,
+  NodeField field,
+  String current,
+  void Function(String) onSave,
+) async {
+  if (field.kind == FieldKind.select && field.options.isNotEmpty) {
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text('${field.label}（${spec.title}）',
+            style: const TextStyle(fontSize: 15)),
+        children: [
+          for (final opt in field.options)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, opt),
+              child: Row(
+                children: [
+                  Icon(
+                    opt == current
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(opt, style: const TextStyle(fontFamily: 'monospace')),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (picked != null) onSave(picked);
+    return;
+  }
+
+  final v = await showTextPrompt(
+    context,
+    title: field.label,
+    initial: current,
+    hint: field.hint,
+    mono: true,
+    keyboardType:
+        field.kind == FieldKind.number ? TextInputType.number : TextInputType.text,
+  );
+  if (v != null) onSave(v);
+}
+
+Future<void> editLiteral(
+  BuildContext context,
+  PortSpec port,
+  String current,
+  void Function(String) onSave,
+) async {
+  final v = await showTextPrompt(
+    context,
+    title: '${port.label}（Lua 表达式）',
+    initial: current,
+    hint: '例如 42 / "文本" / sum / (a+b)',
+    mono: true,
+  );
+  if (v != null && v.trim().isNotEmpty) onSave(v.trim());
+}
+
+Future<bool> confirm(
+  BuildContext context,
+  String title, {
+  String? message,
+  String okLabel = '确定',
+}) async {
+  final r = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title, style: const TextStyle(fontSize: 16)),
+      content: message == null ? null : Text(message),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+        FilledButton(
+            onPressed: () => Navigator.pop(ctx, true), child: Text(okLabel)),
+      ],
+    ),
+  );
+  return r ?? false;
+}
+
+void copyToClipboard(String text) {
+  Clipboard.setData(ClipboardData(text: text));
+}
