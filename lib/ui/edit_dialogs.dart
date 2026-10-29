@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/node_spec.dart';
+import '../samples/sample_catalog.dart';
 
 Future<String?> showTextPrompt(
   BuildContext context, {
@@ -132,4 +133,39 @@ Future<bool> confirm(
 
 void copyToClipboard(String text) {
   Clipboard.setData(ClipboardData(text: text));
+}
+
+/// 选择一张内置示例图（普通对话框，返回 null 表示取消）。
+Future<SampleEntry?> showSamplePicker(BuildContext context) {
+  return showDialog<SampleEntry>(
+    context: context,
+    builder: (ctx) => SimpleDialog(
+      title: const Text('载入示例图', style: TextStyle(fontSize: 16)),
+      children: [
+        for (final s in kSamples)
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, s),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.title,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    s.description,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF9A9AA4)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }

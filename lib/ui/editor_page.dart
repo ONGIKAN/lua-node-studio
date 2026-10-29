@@ -167,8 +167,11 @@ class _EditorPageState extends State<EditorPage> {
                 c.newGraph();
                 _canvasKey.currentState?.fitToContent();
               case 'sample':
-                c.loadSample();
-                _canvasKey.currentState?.fitToContent();
+                final entry = await showSamplePicker(context);
+                if (entry != null) {
+                  c.loadGraph(entry.build());
+                  _canvasKey.currentState?.fitToContent();
+                }
               case 'save':
                 await _save();
               case 'open':

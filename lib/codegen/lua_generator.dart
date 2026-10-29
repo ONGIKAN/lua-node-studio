@@ -1,12 +1,6 @@
 import '../models/graph.dart';
 import '../models/node_spec.dart';
 
-const Set<String> luaKeywords = {
-  'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function',
-  'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then',
-  'true', 'until', 'while',
-};
-
 class LuaGenResult {
   final String code;
   final List<String> warnings;
@@ -25,6 +19,11 @@ class LuaGenerator {
   final List<String> _warnings = [];
   int _indent = 0;
   int _budget = 4000;
+
+  /// 调用节点的返回值变量名，以及该变量是否已经生成声明。
+  final Map<String, String> _retVars = {};
+  final Set<String> _retDeclared = {};
+  int _retSeed = 0;
 
   LuaGenerator(this.graph);
 
@@ -84,11 +83,11 @@ class LuaGenerator {
         }
         return graph.nextExec(node.id, 'out');
       case 'call':
-        final name = _ident(node.field('name'), 'myFunc');
-        _line('$name()');
-        return graph.nextExec(node.id, 'out');
+        return _emitCall(node);
       case 'stop':
-        _line('return');
+        final hasValue = graph.linkInto(node.id, 'value') != null ||
+            node.literal('value').trim().isNotEmpty;
+        _line(hasValue ? 'return ${_expr(node, 'value')}' : 'return');
         return null;
       case 'comment':
         for (final l in node.field('text').split('\n')) {
@@ -109,6 +108,39 @@ class LuaGenerator {
     }
   }
 
+  /// 调用节点最多支持 3 个参数端口；空着的尾部参数会被省略，
+  /// 中间的空洞补 `nil` 以保持参数位置。
+  String? _emitCall(GraphNode node) {
+    final name = _ident(node.field('name'), 'myFunc');
+    var lastUsed = 0;
+    for (var i = 1; i <= 3; i++) {
+      final portId = 'arg$i';
+      final linked = graph.linkInto(node.id, portId) != null;
+      if (linked || node.literal(portId).trim().isNotEmpty) lastUsed = i;
+    }
+    final args = <String>[];
+    for (var i = 1; i <= lastUsed; i++) {
+      final portId = 'arg$i';
+      if (graph.linkInto(node.id, portId) != null) {
+        args.add(_expr(node, portId));
+      } else {
+        final lit = node.literal(portId).trim();
+        args.add(lit.isEmpty ? 'nil' : lit);
+      }
+    }
+    final call = '$name(${args.join(', ')})';
+    final usesRet =
+        graph.linksFromNode(node.id).any((l) => l.fromPort == 'ret');
+    if (usesRet) {
+      final v = _retVar(node.id);
+      _retDeclared.add(node.id);
+      _line('local $v = $call');
+    } else {
+      _line(call);
+    }
+    return graph.nextExec(node.id, 'out');
+  }
+
   String? _emitIf(GraphNode node, Set<String> guard) {
     final cond = _expr(node, 'cond');
     final thenStart = graph.nextExec(node.id, 'then');
@@ -123,7 +155,7 @@ class LuaGenerator {
       _emitChain(thenStart, <String>{...guard}, stopAt: converge);
     }
     _indent--;
-    if (elseStart != null) {
+    if (elseStart != null && elseStart != converge) {
       _line('else');
       _indent++;
       _emitChain(elseStart, <String>{...guard}, stopAt: converge);
@@ -187,12 +219,18 @@ class LuaGenerator {
 
   String? _emitFunc(GraphNode node, Set<String> guard) {
     final name = _ident(node.field('name'), 'myFunc');
+    final rawParams = node.field('params').trim();
+    final params = parseParamNames(rawParams);
+    if (rawParams.isNotEmpty && params.isEmpty) {
+      _warnings.add('函数参数「$rawParams」不是合法的参数列表，已忽略');
+    }
     final bodyStart = graph.nextExec(node.id, 'body');
     final doneStart = graph.nextExec(node.id, 'done');
     final converge = _convergeForLoop(node, bodyStart, doneStart);
 
     _declared.add(name);
-    _line('local function $name()');
+    _declared.addAll(params);
+    _line('local function $name(${params.join(', ')})');
     _indent++;
     if (bodyStart == null) {
       _line('-- 空函数体');
@@ -219,6 +257,14 @@ class LuaGenerator {
   }
 
   // ---------------------------------------------------------------- 数据流
+
+  String _retVar(String nodeId) =>
+      _retVars.putIfAbsent(nodeId, () => '__ret_${_retSeed++}');
+
+  int? _paramIndex(String portId) {
+    if (!portId.startsWith('p')) return null;
+    return int.tryParse(portId.substring(1));
+  }
 
   String _expr(GraphNode node, String portId, [int depth = 0]) {
     if (depth > 40) return 'nil';
@@ -253,6 +299,21 @@ class LuaGenerator {
         final op = src.field('op');
         if (op == 'not') return '(not ${_expr(src, 'a', depth)})';
         return '(${_expr(src, 'a', depth)} $op ${_expr(src, 'b', depth)})';
+      case 'func':
+        // 函数参数端口：p0/p1/... 直接就是函数体里的局部变量名
+        final idx = _paramIndex(portId);
+        final params = parseParamNames(src.field('params'));
+        if (idx == null || idx >= params.length) return 'nil';
+        return params[idx];
+      case 'call':
+        if (portId == 'ret') {
+          if (!_retDeclared.contains(src.id)) {
+            _warnings.add('「${src.spec.title}」的返回值在调用语句之前被使用');
+          }
+          return _retVar(src.id);
+        }
+        _warnings.add('「${src.spec.title}」没有可用的数据输出');
+        return 'nil';
       default:
         _warnings.add('「${src.spec.title}」没有可用的数据输出');
         return 'nil';

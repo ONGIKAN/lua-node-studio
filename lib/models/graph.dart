@@ -56,6 +56,10 @@ class GraphNode {
   final Map<String, String> fields;
   final Map<String, String> literals;
 
+  /// 「定义函数」节点的端口随字段变化，这里缓存最近一次算出的 spec。
+  NodeSpec? _dynSpec;
+  String? _dynSpecKey;
+
   GraphNode({
     required this.id,
     required this.type,
@@ -65,25 +69,56 @@ class GraphNode {
   })  : fields = fields ?? {},
         literals = literals ?? {};
 
-  NodeSpec get spec => NodeRegistry.of(type);
+  /// 节点对应的端口定义。
+  ///
+  /// 大多数节点类型是静态的；「定义函数」会把「参数」里的变量名展开成
+  /// `p0..pN` 数据输出端口，好让函数体直接读到这些参数。
+  NodeSpec get spec {
+    final base = NodeRegistry.of(type);
+    if (type != 'func') return base;
+    final raw = fields['params'] ?? _defaultField('params');
+    if (_dynSpec != null && _dynSpecKey == raw) return _dynSpec!;
+    final params = parseParamNames(raw);
+    _dynSpec = params.isEmpty
+        ? base
+        : NodeSpec(
+            type: base.type,
+            title: base.title,
+            subtitle: base.subtitle,
+            category: base.category,
+            inputs: base.inputs,
+            outputs: [
+              ...base.outputs,
+              for (var i = 0; i < params.length; i++)
+                PortSpec('p$i', params[i], PortType.any),
+            ],
+            fields: base.fields,
+          );
+    _dynSpecKey = raw;
+    return _dynSpec!;
+  }
 
   Size get size => NodeLayout.sizeOf(spec);
 
   Offset get center => pos + Offset(size.width / 2, size.height / 2);
 
+  String _defaultField(String id) {
+    for (final f in NodeRegistry.of(type).fields) {
+      if (f.id == id) return f.defaultValue;
+    }
+    return '';
+  }
+
   String field(String id) {
     final f = fields[id];
     if (f != null) return f;
-    for (final nf in spec.fields) {
-      if (nf.id == id) return nf.defaultValue;
-    }
-    return '';
+    return _defaultField(id);
   }
 
   String literal(String portId) {
     final l = literals[portId];
     if (l != null) return l;
-    return spec.inputById(portId)?.defaultLiteral ?? 'nil';
+    return NodeRegistry.of(type).inputById(portId)?.defaultLiteral ?? 'nil';
   }
 
   Offset inputPortOffset(String portId) {

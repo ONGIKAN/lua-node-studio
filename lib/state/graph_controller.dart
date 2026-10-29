@@ -252,11 +252,21 @@ class GraphController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void loadSample() {
+  void loadSample() => loadGraph(buildSampleGraph());
+
+  /// 载入任意一张图（内置示例、模板或外部来源）。
+  void loadGraph(NodeGraph graph) {
     pushUndo();
-    _graph = buildSampleGraph();
+    _graph = graph;
+    if (_graph.startNode == null) {
+      _graph.nodes.add(
+          GraphNode(id: _newId('start'), type: 'start', pos: const Offset(60, 60)));
+    }
     selectedNodeId = null;
+    currentFileName = null;
     _afterStructureChange();
+    dirty = false;
+    notifyListeners();
   }
 
   void newGraph() {

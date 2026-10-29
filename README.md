@@ -2,7 +2,7 @@
 
 Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。
 
-当前版本 **v1.2.0 (build 3)**，Android 安装包见 [`installer/`](installer/)。
+当前版本 **v1.3.0 (build 4)**，Android 安装包见 [`installer/`](installer/)。
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
 
@@ -10,19 +10,21 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 - **可视化节点画布**：节点拖拽、端口连线、网格背景、缩放/平移，适配手机与桌面窗口尺寸
 - **内置节点库**：流程 / 数据 / 数学 / 控制 / 函数五类节点（定义见 `lib/models/node_spec.dart`）
+- **带参数函数**：`定义函数` 节点支持参数列表（逗号分隔，如 `a, b`），参数会变成节点上可连线的数据端口；`调用函数` 最多传 3 个参数，可用 `返回值` 端口接收结果；`结束` 节点可写 `return 表达式`
 - **一键生成 Lua 代码**：执行流决定语句顺序，数据流递归展开为表达式；分支与循环用「汇合点」规则收口，无需额外 merge 节点（`lib/codegen/lua_generator.dart`）
 - **内置 Lua 5.3 运行时**：纯 Dart 实现（`lua_dardo_plus`），在 Isolate 中执行并默认 8 秒超时，不阻塞 UI（`lib/engine/lua_engine.dart`）
 - **输出面板**：查看运行时 stdout、错误与耗时
 - **工程管理**：JSON 工程保存 / 打开，编辑自动保存并在下次启动时恢复（应用文档目录 `LuaNodeStudio/`）
-- **撤销 / 重做**、节点自动布局、内置「1 到 10 求和」示例
+- **内置示例图**：1 到 10 求和、阶乘、斐波那契数列、最大公约数、素数判断，从菜单「载入示例图」一键切换（`lib/samples/`）
+- **撤销 / 重做**、节点自动布局
 - 深色 Material 3 主题
 
 ## 安装包（Android）
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | `installer/lua_node_studio-v1.2.0-release.apk` |
-| 版本 | 1.2.0 (versionCode 3) |
+| 文件 | `installer/lua_node_studio-v1.3.0-release.apk` |
+| 版本 | 1.3.0 (versionCode 4) |
 | 包名 | `com.luanode.lua_node_studio` |
 | 大小 | 约 51.5 MB |
 
@@ -62,3 +64,16 @@ installer/           Android 安装包（APK）
 ## 技术栈
 
 Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_dardo_plus)（纯 Dart Lua 5.3） · [path_provider](https://pub.dev/packages/path_provider)
+
+## 更新日志
+
+### v1.3.0
+
+- `定义函数` 节点支持参数列表（如 `a, b`），参数自动变成可连线的数据端口
+- `调用函数` 节点支持最多 3 个参数，并可把返回值接到其它节点；`结束` 节点支持 `return 表达式`
+- 新增 4 个常见算法示例：阶乘、斐波那契数列、最大公约数、素数判断
+- 菜单「载入示例图」改为示例选择对话框；补充示例执行与代码生成的自动化测试
+
+### v1.2.0
+
+- 首个公开版本：节点画布、Lua 代码生成、内置 Lua 5.3 运行时、工程保存与自动保存

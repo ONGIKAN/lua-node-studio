@@ -37,6 +37,30 @@ extension PortTypeX on PortType {
   }
 }
 
+/// Lua 保留字。变量名/函数参数不能与它们重名。
+const Set<String> luaKeywords = {
+  'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function',
+  'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then',
+  'true', 'until', 'while',
+};
+
+final RegExp _identPattern = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
+
+/// 解析「函数参数」文本：支持中英文逗号、顿号、空格分隔。
+///
+/// 只保留合法且不重复的 Lua 标识符，因此节点上的参数端口不会出现非法名字。
+List<String> parseParamNames(String raw) {
+  final out = <String>[];
+  for (final part in raw.split(RegExp(r'[,，、\s]+'))) {
+    final v = part.trim();
+    if (v.isEmpty) continue;
+    if (!_identPattern.hasMatch(v) || luaKeywords.contains(v)) continue;
+    if (out.contains(v)) continue;
+    out.add(v);
+  }
+  return out;
+}
+
 enum FieldKind { text, number, select }
 
 class PortSpec {
@@ -297,14 +321,27 @@ class NodeRegistry {
         PortSpec('body', '函数体', PortType.exec),
         PortSpec('done', '之后', PortType.exec),
       ],
-      fields: [NodeField.text('name', '函数名', defaultValue: 'myFunc')],
+      fields: [
+        NodeField.text('name', '函数名', defaultValue: 'myFunc'),
+        NodeField.text('params', '参数',
+            defaultValue: '', hint: '逗号分隔，例如 a, b'),
+      ],
     ),
     'call': const NodeSpec(
       type: 'call',
       title: '调用函数',
+      subtitle: 'name(args)',
       category: NodeCategory.function,
-      inputs: [PortSpec('in', '', PortType.exec)],
-      outputs: [PortSpec('out', '', PortType.exec)],
+      inputs: [
+        PortSpec('in', '', PortType.exec),
+        PortSpec('arg1', '参数1', PortType.any, defaultLiteral: ''),
+        PortSpec('arg2', '参数2', PortType.any, defaultLiteral: ''),
+        PortSpec('arg3', '参数3', PortType.any, defaultLiteral: ''),
+      ],
+      outputs: [
+        PortSpec('out', '', PortType.exec),
+        PortSpec('ret', '返回值', PortType.any),
+      ],
       fields: [NodeField.text('name', '函数名', defaultValue: 'myFunc')],
     ),
     'stop': const NodeSpec(
@@ -312,7 +349,10 @@ class NodeRegistry {
       title: '结束',
       subtitle: 'return',
       category: NodeCategory.flow,
-      inputs: [PortSpec('in', '', PortType.exec)],
+      inputs: [
+        PortSpec('in', '', PortType.exec),
+        PortSpec('value', '返回值', PortType.any, defaultLiteral: ''),
+      ],
     ),
     'comment': const NodeSpec(
       type: 'comment',
