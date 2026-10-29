@@ -2,11 +2,13 @@
 
 Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。同一份代码支持 **Android** 与 **Windows** 双平台。
 
-当前版本 **v1.5.0 (build 6)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换。
+当前版本 **v1.6.0 (build 7)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换，并支持接入自定义 AI API（OpenAI 兼容）用对话直接生成节点图。
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
 
 ![项目管理首页](docs/project_manager.jpg)
+
+![AI 对话生成节点图](docs/ai_chat.jpg)
 
 ## English
 
@@ -18,13 +20,15 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 - 5 built-in sample graphs: 1-to-10 sum, factorial, Fibonacci, greatest common divisor, primality test
 - Cross-platform: **Android** (APK) and **Windows** (portable x64) — downloads on the [Releases](https://github.com/ONGIKAN/lua-node-studio/releases) page
 - **Project manager as the home screen**: built-in samples, your own projects, new / import / rename / duplicate / delete — saved projects and imported JSON show up in one list
-- Flutter / Dart, Material 3, 36 unit + golden tests
+- **AI assistant (optional)**: plug in your own OpenAI-compatible API (base URL / API key / model); describe the program in chat and the app asks the model for a node graph, validates it and opens it on the canvas — API keys stay on your device
+- Flutter / Dart, Material 3, 44 unit + golden tests
 - **Bilingual UI**: switch between 中文 and English in the top-bar menu (`⋮`); the choice is remembered between launches
 - Licensed under the **Apache License 2.0**
 
 ## 功能
 
 - **项目管理首页**：启动即进入「项目管理」，内置示例与「我的项目」放在同一个列表；新建、导入 JSON、重命名、创建副本、删除都在这里完成，上次退出前的自动保存会显示成「继续上次编辑」
+- **AI 对话生成节点图（可选）**：在项目管理页点「AI 生成」→ 填入自己的 OpenAI 兼容 API 地址 / 密钥 / 模型（OpenAI、DeepSeek、Ollama、任意兼容服务均可），保存时会先测试连通性；之后用自然语言描述程序，模型返回节点图 JSON，客户端做完整校验（节点类型、端口类型、执行流/数据流规则、自动补「开始」节点、自动布局），确认后一键在画布打开并生成代码。密钥只保存在本机设置里（`lib/ai/`）
 - **可视化节点画布**：节点拖拽、端口连线、网格背景、缩放/平移，适配手机与桌面窗口尺寸
 - **内置节点库**：流程 / 数据 / 数学 / 控制 / 函数五类节点（定义见 `lib/models/node_spec.dart`）
 - **带参数函数**：`定义函数` 节点支持参数列表（逗号分隔，如 `a, b`），参数会变成节点上可连线的数据端口；`调用函数` 最多传 3 个参数，可用 `返回值` 端口接收结果；`结束` 节点可写 `return 表达式`
@@ -45,10 +49,10 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | `installer/lua_node_studio-v1.5.0-release.apk` |
-| 版本 | 1.5.0 (versionCode 6) |
+| 文件 | `installer/lua_node_studio-v1.6.0-release.apk` |
+| 版本 | 1.6.0 (versionCode 7) |
 | 包名 | `com.luanode.lua_node_studio` |
-| 大小 | 约 51.5 MB |
+| 大小 | 约 53.6 MB |
 
 下载后允许“安装未知应用”即可安装。
 
@@ -56,10 +60,10 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | Release 资产 `lua_node_studio-v1.5.0-windows-x64.zip` |
-| 版本 | 1.5.0 |
+| 文件 | Release 资产 `lua_node_studio-v1.6.0-windows-x64.zip` |
+| 版本 | 1.6.0 |
 | 系统要求 | Windows 10 / 11 x64 |
-| 大小 | 约 12 MB |
+| 大小 | 约 12.9 MB |
 
 解压后双击 `lua_node_studio.exe` 即可运行；`data/` 目录与 dll 需要和 exe 保持在同一个文件夹里。
 
@@ -88,6 +92,7 @@ lib/
   codegen/           节点图 → Lua 源码生成器
   engine/            Lua 运行时（Isolate + 超时控制）
   l10n/              中英文文案与语言持久化
+  ai/                自定义 AI API 客户端、对话页、节点图蓝图解析
   storage/           工程 JSON 存取
   samples/           内置示例图
 android/             Android 平台工程
@@ -100,13 +105,21 @@ installer/           Android 安装包（APK）
 
 ## 技术栈
 
-Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_dardo_plus)（纯 Dart Lua 5.3） · [path_provider](https://pub.dev/packages/path_provider)
+Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_dardo_plus)（纯 Dart Lua 5.3） · [path_provider](https://pub.dev/packages/path_provider) · OpenAI 兼容 Chat Completions API（直接使用 `dart:io HttpClient`，无额外依赖）
 
 ## 开源协议
 
 本项目使用 **Apache License 2.0**，全文见 [LICENSE](LICENSE)，第三方依赖声明见 [NOTICE](NOTICE)。欢迎 Star、提 Issue 和 PR。
 
 ## 更新日志
+
+### v1.6.0
+
+- 新增 **AI 对话生成节点图**：项目管理页「AI 生成」入口，支持任意 OpenAI 兼容 API（OpenAI / DeepSeek / Ollama / 自建服务）
+- 配置页可填 API 地址、密钥、模型名，保存时自动测试连通性；密钥只保存在本机设置，不上传
+- AI 返回的节点图会经过严格校验：节点类型、端口是否存在、执行流/数据流规则、类型兼容、自动补「开始」节点、坐标缺失时自动布局
+- 校验通过后可一键在画布打开、继续编辑、生成代码并运行；对话结果卡片显示节点/连线数量与警告
+- 新增 8 个 AI 相关自动化测试（配置、蓝图解析、对话流程），项目共 44 个测试
 
 ### v1.5.0
 

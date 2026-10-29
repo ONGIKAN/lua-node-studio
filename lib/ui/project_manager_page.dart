@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../ai/ai_chat_page.dart';
 import '../l10n/l10n.dart';
 import '../l10n/language_store.dart';
 import '../samples/sample_catalog.dart';
@@ -74,6 +75,9 @@ class _ProjectManagerPageState extends State<ProjectManagerPage> {
   }
 
   void _openNew() => _open(const EditorPage(startBlank: true));
+
+  /// 打开 AI 对话页：配置自定义 AI API 后，用自然语言生成节点图。
+  void _openAiChat() => _open(AiChatPage(store: _store));
 
   void _openResume() => _open(const EditorPage());
 
@@ -370,6 +374,18 @@ class _ProjectManagerPageState extends State<ProjectManagerPage> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFB6C4DE),
                   side: const BorderSide(color: Color(0xFF3A3A46)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  minimumSize: const Size(0, 40),
+                ),
+              ),
+              OutlinedButton.icon(
+                key: const ValueKey('pm-ai'),
+                onPressed: _openAiChat,
+                icon: const Icon(Icons.auto_awesome, size: 17),
+                label: Text(L10n.t('AI 生成', 'Generate with AI')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF8FD9A8),
+                  side: const BorderSide(color: Color(0xFF356B4C)),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   minimumSize: const Size(0, 40),
                 ),
