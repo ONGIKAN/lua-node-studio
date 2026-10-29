@@ -26,7 +26,7 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 | 包名 | `com.luanode.lua_node_studio` |
 | 大小 | 约 51.5 MB |
 
-下载后允许“安装未知应用”即可安装。
+下载后允许“安装未知应用”即可安装；也可以直接从 [Releases](https://github.com/ONGIKAN/lua-node-studio/releases) 下载 APK。
 
 ## 本地开发
 
