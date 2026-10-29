@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lua_node_studio/main.dart';
+import 'package:lua_node_studio/ui/editor_page.dart';
 import 'package:lua_node_studio/ui/output_panel.dart';
 
 /// 用系统字体渲染快照，方便检查中文排版（测试环境默认字体是方块）。
@@ -28,7 +29,7 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const LuaNodeApp());
+    await tester.pumpWidget(const LuaNodeApp(home: EditorPage()));
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pump(const Duration(milliseconds: 600));
 
@@ -44,7 +45,7 @@ void main() {
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const LuaNodeApp());
+    await tester.pumpWidget(const LuaNodeApp(home: EditorPage()));
     await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.byIcon(Icons.play_arrow_rounded));

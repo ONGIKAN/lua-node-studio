@@ -1,0 +1,10 @@
+Lua Node Studio
+Copyright 2026 ONGIKAN
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party dependencies retain their own licenses:
+- Flutter / Dart SDK (BSD-3-Clause)
+- lua_dardo_plus (MIT, pure-Dart Lua 5.3 runtime)
+- path_provider (BSD-3-Clause)
+- cupertino_icons (MIT)

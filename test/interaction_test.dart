@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lua_node_studio/main.dart';
+import 'package:lua_node_studio/ui/editor_page.dart';
 import 'package:lua_node_studio/ui/node_widget.dart';
 import 'package:lua_node_studio/ui/output_panel.dart';
 
@@ -8,7 +9,7 @@ Future<void> _boot(WidgetTester tester) async {
   tester.view.physicalSize = const Size(2400, 3000);
   tester.view.devicePixelRatio = 2.0;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(const LuaNodeApp());
+  await tester.pumpWidget(const LuaNodeApp(home: EditorPage()));
   await tester.pump(const Duration(milliseconds: 300));
   await tester.pump(const Duration(milliseconds: 300));
 }

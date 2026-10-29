@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'l10n/l10n.dart';
 import 'l10n/language_store.dart';
-import 'ui/editor_page.dart';
+import 'ui/project_manager_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +19,10 @@ Future<void> main() async {
 }
 
 class LuaNodeApp extends StatefulWidget {
-  const LuaNodeApp({super.key});
+  const LuaNodeApp({super.key, this.home});
+
+  /// 测试或二次开发时可以指定首页；默认进入项目管理页。
+  final Widget? home;
 
   @override
   State<LuaNodeApp> createState() => _LuaNodeAppState();
@@ -62,7 +65,7 @@ class _LuaNodeAppState extends State<LuaNodeApp> {
           displayColor: const Color(0xFFE8E8EE),
         ),
       ),
-      home: const EditorPage(),
+      home: widget.home ?? const ProjectManagerPage(),
     );
   }
 }

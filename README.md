@@ -2,9 +2,11 @@
 
 Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实时生成 Lua 源码，并用内置 Lua 5.3 运行时直接执行、查看输出。同一份代码支持 **Android** 与 **Windows** 双平台。
 
-当前版本 **v1.4.0 (build 5)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换。
+当前版本 **v1.5.0 (build 6)**，Android 安装包见 [`installer/`](installer/)。界面支持 **中文 / English** 切换。
 
 ![Lua Node Studio 界面演示](docs/screenshot.jpg)
+
+![项目管理首页](docs/project_manager.jpg)
 
 ## English
 
@@ -15,19 +17,22 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 - JSON project save / autosave, undo / redo, automatic layout
 - 5 built-in sample graphs: 1-to-10 sum, factorial, Fibonacci, greatest common divisor, primality test
 - Cross-platform: **Android** (APK) and **Windows** (portable x64) — downloads on the [Releases](https://github.com/ONGIKAN/lua-node-studio/releases) page
-- Flutter / Dart, Material 3, 28 unit + golden tests
+- **Project manager as the home screen**: built-in samples, your own projects, new / import / rename / duplicate / delete — saved projects and imported JSON show up in one list
+- Flutter / Dart, Material 3, 36 unit + golden tests
 - **Bilingual UI**: switch between 中文 and English in the top-bar menu (`⋮`); the choice is remembered between launches
+- Licensed under the **Apache License 2.0**
 
 ## 功能
 
+- **项目管理首页**：启动即进入「项目管理」，内置示例与「我的项目」放在同一个列表；新建、导入 JSON、重命名、创建副本、删除都在这里完成，上次退出前的自动保存会显示成「继续上次编辑」
 - **可视化节点画布**：节点拖拽、端口连线、网格背景、缩放/平移，适配手机与桌面窗口尺寸
 - **内置节点库**：流程 / 数据 / 数学 / 控制 / 函数五类节点（定义见 `lib/models/node_spec.dart`）
 - **带参数函数**：`定义函数` 节点支持参数列表（逗号分隔，如 `a, b`），参数会变成节点上可连线的数据端口；`调用函数` 最多传 3 个参数，可用 `返回值` 端口接收结果；`结束` 节点可写 `return 表达式`
 - **一键生成 Lua 代码**：执行流决定语句顺序，数据流递归展开为表达式；分支与循环用「汇合点」规则收口，无需额外 merge 节点（`lib/codegen/lua_generator.dart`）
 - **内置 Lua 5.3 运行时**：纯 Dart 实现（`lua_dardo_plus`），在 Isolate 中执行并默认 8 秒超时，不阻塞 UI（`lib/engine/lua_engine.dart`）
 - **输出面板**：查看运行时 stdout、错误与耗时
-- **工程管理**：JSON 工程保存 / 打开，编辑自动保存并在下次启动时恢复（应用文档目录 `LuaNodeStudio/`）
-- **内置示例图**：1 到 10 求和、阶乘、斐波那契数列、最大公约数、素数判断，从菜单「载入示例图」一键切换（`lib/samples/`）
+- **工程管理**：JSON 工程保存 / 打开，工程列表记录名称与修改时间；编辑自动保存并在下次启动时恢复（应用文档目录 `LuaNodeStudio/`）
+- **内置示例图**：1 到 10 求和、阶乘、斐波那契数列、最大公约数、素数判断，项目管理页直接列出，也可从编辑器菜单「载入示例图」切换（`lib/samples/`）
 - **撤销 / 重做**、节点自动布局
 - **中英双语界面**：顶栏 `⋮` 菜单底部可在「English / 中文」之间切换，选择保存在本地设置里，下次启动沿用（`lib/l10n/`）
 - 深色 Material 3 主题
@@ -40,8 +45,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | `installer/lua_node_studio-v1.4.0-release.apk` |
-| 版本 | 1.4.0 (versionCode 5) |
+| 文件 | `installer/lua_node_studio-v1.5.0-release.apk` |
+| 版本 | 1.5.0 (versionCode 6) |
 | 包名 | `com.luanode.lua_node_studio` |
 | 大小 | 约 51.5 MB |
 
@@ -51,8 +56,8 @@ Flutter 可视化节点编程编辑器：在画布上拖拽节点、连线，实
 
 | 项目 | 说明 |
 | --- | --- |
-| 文件 | Release 资产 `lua_node_studio-v1.4.0-windows-x64.zip` |
-| 版本 | 1.4.0 |
+| 文件 | Release 资产 `lua_node_studio-v1.5.0-windows-x64.zip` |
+| 版本 | 1.5.0 |
 | 系统要求 | Windows 10 / 11 x64 |
 | 大小 | 约 12 MB |
 
@@ -77,7 +82,7 @@ Android 产物在 `build/app/outputs/flutter-apk/`，Windows 产物在 `build/wi
 ```
 lib/
   main.dart          应用入口与主题
-  ui/                编辑器页面、节点画布、输出面板、编辑对话框
+  ui/                项目管理页、编辑器页面、节点画布、输出面板、编辑对话框
   models/            图数据模型、节点注册表、自动布局
   state/             图编辑控制器（撤销/重做、运行、保存）
   codegen/           节点图 → Lua 源码生成器
@@ -87,7 +92,9 @@ lib/
   samples/           内置示例图
 android/             Android 平台工程
 windows/             Windows 桌面平台工程
-test/                单元与 Golden 测试
+assets/             应用图标等资源
+test/                单元与 Golden 测试（含项目管理页测试）
+LICENSE / NOTICE     Apache-2.0 许可证与第三方声明
 installer/           Android 安装包（APK）
 ```
 
@@ -95,7 +102,20 @@ installer/           Android 安装包（APK）
 
 Flutter / Dart · Material 3 · [lua_dardo_plus](https://pub.dev/packages/lua_dardo_plus)（纯 Dart Lua 5.3） · [path_provider](https://pub.dev/packages/path_provider)
 
+## 开源协议
+
+本项目使用 **Apache License 2.0**，全文见 [LICENSE](LICENSE)，第三方依赖声明见 [NOTICE](NOTICE)。欢迎 Star、提 Issue 和 PR。
+
 ## 更新日志
+
+### v1.5.0
+
+- 新增 **项目管理首页**：启动后先看到项目管理页，内置示例与「我的项目」在同一个列表里
+- 新建、导入 JSON、重命名、创建副本、删除工程都在项目管理页完成；工程列表显示节点数与修改时间
+- 上次退出前的自动保存会以「继续上次编辑」卡片出现在首页
+- 自动记录每个工程的展示名与更新时间（`__projects.json`）
+- 新增应用图标（Android 自适应图标 + Windows ico）与项目管理页自动化测试（共 36 个测试）
+- 采用 **Apache License 2.0** 开源协议
 
 ### v1.4.0
 

@@ -4,6 +4,7 @@ import 'package:lua_node_studio/codegen/lua_generator.dart';
 import 'package:lua_node_studio/l10n/l10n.dart';
 import 'package:lua_node_studio/l10n/language_store.dart';
 import 'package:lua_node_studio/main.dart';
+import 'package:lua_node_studio/ui/editor_page.dart';
 import 'package:lua_node_studio/models/node_spec.dart';
 import 'package:lua_node_studio/samples/sample_catalog.dart';
 import 'package:lua_node_studio/samples/sample_graph.dart';
@@ -66,7 +67,7 @@ void main() {
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const LuaNodeApp());
+    await tester.pumpWidget(const LuaNodeApp(home: EditorPage()));
     await tester.pumpAndSettle();
 
     // 默认中文：菜单里提供切换到 English 的入口
@@ -98,7 +99,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     L10n.setLanguage(AppLanguage.en);
-    await tester.pumpWidget(const LuaNodeApp());
+    await tester.pumpWidget(const LuaNodeApp(home: EditorPage()));
     await tester.pumpAndSettle();
 
     // 英文界面下节点标题已切换

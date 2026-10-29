@@ -321,9 +321,14 @@ class GraphController extends ChangeNotifier {
   }
 
   Future<void> saveAs(String name) async {
+    if (_graph.name.trim().isEmpty ||
+        _graph.name == L10n.t('未命名', 'Untitled')) {
+      _graph.name = name;
+    }
     await store.save(name, _graph);
     currentFileName = name;
     dirty = false;
+    await store.registerProject(name, name: _graph.name);
     statusMessage = L10n.t('已保存到本地：$name', 'Saved locally: $name');
     notifyListeners();
   }
@@ -334,6 +339,7 @@ class GraphController extends ChangeNotifier {
     currentFileName = name;
     replaceGraph(g);
     dirty = false;
+    await store.registerProject(name, name: g.name);
     statusMessage = L10n.t('已打开：$name', 'Opened: $name');
     notifyListeners();
   }

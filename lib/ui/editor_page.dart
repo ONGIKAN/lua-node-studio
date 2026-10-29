@@ -4,20 +4,40 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../l10n/language_store.dart';
+import '../models/graph.dart';
 import '../state/graph_controller.dart';
 import 'edit_dialogs.dart';
 import 'node_canvas.dart';
 import 'output_panel.dart';
 
 class EditorPage extends StatefulWidget {
-  const EditorPage({super.key});
+  const EditorPage({
+    super.key,
+    this.controller,
+    this.initialGraph,
+    this.initialFileName,
+    this.startBlank = false,
+  });
+
+  /// 外部注入的控制器（项目管理页可复用同一个实例）；为空时自己创建。
+  final GraphController? controller;
+
+  /// 用一张现成的图打开编辑器（内置示例、导入结果等）。
+  final NodeGraph? initialGraph;
+
+  /// 打开本地已保存的工程文件名。
+  final String? initialFileName;
+
+  /// 新建空白图。
+  final bool startBlank;
 
   @override
   State<EditorPage> createState() => _EditorPageState();
 }
 
 class _EditorPageState extends State<EditorPage> {
-  final GraphController c = GraphController();
+  late final GraphController c;
+  late final bool _ownsController;
   final GlobalKey<NodeCanvasState> _canvasKey = GlobalKey<NodeCanvasState>();
   final GlobalKey<OutputPanelState> _panelKey = GlobalKey<OutputPanelState>();
 
@@ -27,12 +47,28 @@ class _EditorPageState extends State<EditorPage> {
   @override
   void initState() {
     super.initState();
-    c.restoreAutosave();
+    c = widget.controller ?? GraphController();
+    _ownsController = widget.controller == null;
+    if (widget.startBlank) {
+      c.newGraph();
+    } else if (widget.initialFileName != null) {
+      c.loadFile(widget.initialFileName!).then((_) {
+        if (!mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _canvasKey.currentState?.fitToContent());
+      });
+    } else if (widget.initialGraph != null) {
+      c.loadGraph(widget.initialGraph!);
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _canvasKey.currentState?.fitToContent());
+    } else {
+      c.restoreAutosave();
+    }
   }
 
   @override
   void dispose() {
-    c.dispose();
+    if (_ownsController) c.dispose();
     super.dispose();
   }
 
@@ -91,11 +127,19 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   Widget _appBar() {
+    final canPop = Navigator.of(context).canPop();
     return AppBar(
       backgroundColor: const Color(0xFF1D1D21),
       elevation: 0,
       scrolledUnderElevation: 0,
-      titleSpacing: 12,
+      leading: canPop
+          ? IconButton(
+              tooltip: L10n.t('返回项目列表', 'Back to projects'),
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              onPressed: () => Navigator.of(context).maybePop(),
+            )
+          : null,
+      titleSpacing: canPop ? 4 : 12,
       title: GestureDetector(
         onTap: _renameGraph,
         child: Column(
@@ -187,9 +231,15 @@ class _EditorPageState extends State<EditorPage> {
               case 'lang':
                 await LanguageStore.apply(
                     L10n.isEnglish ? AppLanguage.zh : AppLanguage.en);
+              case 'projects':
+                Navigator.of(context).maybePop();
             }
           },
           itemBuilder: (ctx) => [
+            if (canPop)
+              PopupMenuItem(
+                  value: 'projects',
+                  child: Text(L10n.t('项目管理', 'Projects'))),
             PopupMenuItem(
                 value: 'save', child: Text(L10n.t('保存工程', 'Save project'))),
             PopupMenuItem(
